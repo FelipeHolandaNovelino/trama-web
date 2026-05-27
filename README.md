@@ -1,16 +1,47 @@
-# React + Vite
+# Trama
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Trama é um sistema web em desenvolvimento para psicólogos acompanharem a vida emocional dos pacientes por meio de uma timeline clínica, blocos narrativos, padrões emocionais e relações significativas.
 
-Currently, two official plugins are available:
+## Objetivo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+O objetivo do projeto é transformar registros clínicos soltos em uma visão cronológica, conectada e significativa da história emocional do paciente.
 
-## React Compiler
+## Funcionalidades planejadas
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Cadastro de pacientes
+- Tela do paciente
+- Timeline dividida por anos e meses
+- Blocos narrativos
+- Emoções, tags e pessoas relacionadas
+- Espelho do paciente
+- Padrões emocionais
+- Conexões entre eventos
+- Timeline emocional
+- Timeline relacional
+- Registro de sessões
 
-## Expanding the ESLint configuration
+## Tecnologias
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React
+- Vite
+- Tailwind CSS
+- JavaScript
+
+## Status
+
+Projeto em fase inicial de desenvolvimento.
+
+Atualmente existe uma primeira versão visual da tela do paciente com timeline fake e dados simulados.
+
+## Próximos passos
+
+- Organizar componentes
+- Criar dados mockados separados
+- Construir tela de adicionar sessão
+- Criar bloco narrativo interativo
+- Planejar estrutura do banco de dados
+- Integrar com Supabase futuramente
+
+## Autor
+
+Felipe Holanda
