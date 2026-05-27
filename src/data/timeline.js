@@ -31,6 +31,15 @@ export const timeline = [
             people: ["Chefe"],
             tags: ["trabalho", "invalidação", "exposição"],
             intensity: 9,
+            connections: [
+              {
+                targetBlockId: "block-5",
+                targetTitle: "Aprovação na faculdade",
+                strength: "forte",
+                reason:
+                  "Repetição da sensação de invalidação diante de uma figura de autoridade.",
+              },
+            ],
           },
           {
             id: "block-3",
@@ -42,6 +51,22 @@ export const timeline = [
             people: ["Mãe"],
             tags: ["invalidação", "infância", "padrão recorrente"],
             intensity: 7,
+            connections: [
+              {
+                targetBlockId: "block-2",
+                targetTitle: "Discussão com o chefe",
+                strength: "moderada",
+                reason:
+                  "O evento atual ajudou o paciente a reconhecer um padrão antigo.",
+              },
+              {
+                targetBlockId: "block-5",
+                targetTitle: "Aprovação na faculdade",
+                strength: "forte",
+                reason:
+                  "Ambos os eventos envolvem conquista, exposição e medo de invalidação.",
+              },
+            ],
           },
         ],
       },
