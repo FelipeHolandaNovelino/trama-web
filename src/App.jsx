@@ -1,55 +1,8 @@
 import { timeline } from "./data/timeline"
 import { Sidebar } from "./components/Sidebar"
+import { PatientHeader } from "./components/PatientHeader"
 
 
-
-function PatientHeader() {
-  return (
-    <section className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-      <div className="flex justify-between gap-6">
-        <div>
-          <p className="text-sm text-slate-500">Paciente</p>
-          <h2 className="text-3xl font-bold text-slate-900">João Luiz</h2>
-
-          <div className="mt-2 flex gap-2 text-sm text-slate-500">
-            <span>30 anos</span>
-            <span>•</span>
-            <span>Ansiedade crônica</span>
-            <span>•</span>
-            <span>Última sessão: 22/05/2025</span>
-          </div>
-
-          <p className="mt-4 max-w-2xl text-slate-600">
-            Paciente com histórico de invalidação emocional, medo de rejeição e
-            tendência ao isolamento. Em processo gradual de individuação.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button className="h-11 rounded-2xl bg-violet-800 px-5 text-white font-medium shadow-sm">
-            + Adicionar sessão
-          </button>
-          <button className="h-11 rounded-2xl border border-slate-200 px-5 text-slate-700">
-            Editar espelho
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        {["abandono", "vergonha", "autoestima", "validação", "isolamento"].map(
-          (tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-violet-50 px-3 py-1 text-sm text-violet-700"
-            >
-              {tag}
-            </span>
-          )
-        )}
-      </div>
-    </section>
-  )
-}
 
 function TimelineBlock({ block }) {
   const colorByType = {
