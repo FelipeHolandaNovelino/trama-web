@@ -11,14 +11,106 @@ const timelineModes = [
   {
     id: "emotional",
     label: "Emocional",
-    description: "Visualização dos eventos a partir das emoções recorrentes",
+    description: "Eventos agrupados pelas emoções recorrentes",
   },
   {
     id: "relational",
     label: "Relacional",
-    description: "Visualização dos eventos a partir das pessoas importantes",
+    description: "Eventos agrupados pelas pessoas importantes",
   },
 ]
+
+function groupBlocksByArrayField(blocks, fieldName) {
+  return blocks.reduce((groups, block) => {
+    const values = block[fieldName] || []
+
+    values.forEach((value) => {
+      if (!groups[value]) {
+        groups[value] = []
+      }
+
+      groups[value].push(block)
+    })
+
+    return groups
+  }, {})
+}
+
+function GroupedTimelineView({ groupedBlocks, onOpenConnectedBlock }) {
+  const groups = Object.entries(groupedBlocks).sort(([firstName], [secondName]) =>
+    firstName.localeCompare(secondName)
+  )
+
+  return (
+    <div className="mt-8 space-y-6">
+      {groups.map(([groupName, blocks]) => (
+        <div
+          key={groupName}
+          className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+        >
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-bold text-violet-800">
+                {groupName}
+              </h3>
+              <p className="text-sm text-slate-500">
+                {blocks.length} bloco{blocks.length > 1 ? "s" : ""} conectado
+                {blocks.length > 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {blocks.map((block) => (
+              <TimelineBlock
+                key={`${groupName}-${block.id}`}
+                block={block}
+                onOpenConnectedBlock={onOpenConnectedBlock}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ChronologicalTimelineView({ timelineData, onOpenConnectedBlock }) {
+  return (
+    <div className="mt-8 space-y-10">
+      {timelineData.map((yearGroup) => (
+        <div key={yearGroup.year}>
+          <h3 className="text-2xl font-bold text-violet-800">
+            {yearGroup.year}
+          </h3>
+
+          <div className="mt-4 space-y-4 border-l-2 border-violet-100 pl-6">
+            {yearGroup.months.map((monthGroup) => (
+              <div
+                key={monthGroup.month}
+                className="grid grid-cols-[70px_1fr] gap-4"
+              >
+                <div className="pt-4 text-sm font-semibold text-slate-500">
+                  {monthGroup.month}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {monthGroup.blocks.map((block) => (
+                    <TimelineBlock
+                      key={block.id}
+                      block={block}
+                      onOpenConnectedBlock={onOpenConnectedBlock}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export function Timeline({ timelineData }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
@@ -26,16 +118,26 @@ export function Timeline({ timelineData }) {
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
 
-  const blocksById = useMemo(() => {
-    const allBlocks = timelineData.flatMap((yearGroup) =>
+  const allBlocks = useMemo(() => {
+    return timelineData.flatMap((yearGroup) =>
       yearGroup.months.flatMap((monthGroup) => monthGroup.blocks)
     )
+  }, [timelineData])
 
+  const blocksById = useMemo(() => {
     return allBlocks.reduce((accumulator, block) => {
       accumulator[block.id] = block
       return accumulator
     }, {})
-  }, [timelineData])
+  }, [allBlocks])
+
+  const emotionalGroups = useMemo(() => {
+    return groupBlocksByArrayField(allBlocks, "emotions")
+  }, [allBlocks])
+
+  const relationalGroups = useMemo(() => {
+    return groupBlocksByArrayField(allBlocks, "people")
+  }, [allBlocks])
 
   function handleOpenConnectedBlock(blockId) {
     setSelectedBlock(blocksById[blockId])
@@ -70,47 +172,26 @@ export function Timeline({ timelineData }) {
         </div>
       </div>
 
-      {selectedMode !== "chronological" && (
-        <div className="mt-6 rounded-2xl border border-dashed border-violet-200 bg-violet-50/60 p-4 text-sm text-violet-800">
-          Modo <strong>{currentMode.label}</strong> selecionado. Nesta fase do
-          MVP, a visualização ainda usa a mesma timeline cronológica, mas esse
-          botão já prepara a interface para futuras leituras emocionais e
-          relacionais.
-        </div>
+      {selectedMode === "chronological" && (
+        <ChronologicalTimelineView
+          timelineData={timelineData}
+          onOpenConnectedBlock={handleOpenConnectedBlock}
+        />
       )}
 
-      <div className="mt-8 space-y-10">
-        {timelineData.map((yearGroup) => (
-          <div key={yearGroup.year}>
-            <h3 className="text-2xl font-bold text-violet-800">
-              {yearGroup.year}
-            </h3>
+      {selectedMode === "emotional" && (
+        <GroupedTimelineView
+          groupedBlocks={emotionalGroups}
+          onOpenConnectedBlock={handleOpenConnectedBlock}
+        />
+      )}
 
-            <div className="mt-4 space-y-4 border-l-2 border-violet-100 pl-6">
-              {yearGroup.months.map((monthGroup) => (
-                <div
-                  key={monthGroup.month}
-                  className="grid grid-cols-[70px_1fr] gap-4"
-                >
-                  <div className="pt-4 text-sm font-semibold text-slate-500">
-                    {monthGroup.month}
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {monthGroup.blocks.map((block) => (
-                      <TimelineBlock
-                        key={block.id}
-                        block={block}
-                        onOpenConnectedBlock={handleOpenConnectedBlock}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {selectedMode === "relational" && (
+        <GroupedTimelineView
+          groupedBlocks={relationalGroups}
+          onOpenConnectedBlock={handleOpenConnectedBlock}
+        />
+      )}
 
       <TimelineBlockModal
         block={selectedBlock}
