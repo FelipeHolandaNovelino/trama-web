@@ -1,4 +1,8 @@
+import { useState } from "react"
+
 function TimelineBlock({ block }) {
+  const [isOpen, setIsOpen] = useState(false)
+
   const colorByType = {
     "Marco positivo": "border-emerald-200 bg-emerald-50",
     "Evento traumático": "border-rose-200 bg-rose-50",
@@ -7,22 +11,73 @@ function TimelineBlock({ block }) {
   }
 
   return (
-    <div className={`rounded-2xl border p-4 ${colorByType[block.type] || "bg-white"}`}>
-      <p className="text-xs font-semibold text-slate-500">{block.type}</p>
-      <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
-      <p className="mt-2 text-sm text-slate-600">{block.text}</p>
+    <button
+      onClick={() => setIsOpen(!isOpen)}
+      className={`w-full text-left rounded-2xl border p-4 transition hover:shadow-md ${
+        colorByType[block.type] || "bg-white"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold text-slate-500">{block.type}</p>
+          <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
+          <p className="mt-1 text-xs text-slate-500">{block.date}</p>
+        </div>
+
+        <span className="rounded-full bg-white/70 px-2 py-1 text-xs text-slate-700">
+          Intensidade {block.intensity}/10
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm text-slate-600">{block.text}</p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {block.tags.map((tag) => (
+        {block.emotions.map((emotion) => (
           <span
-            key={tag}
-            className="rounded-full bg-white/70 px-2 py-1 text-xs text-slate-700"
+            key={emotion}
+            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
           >
-            {tag}
+            emoção: {emotion}
           </span>
         ))}
       </div>
-    </div>
+
+      {isOpen && (
+        <div className="mt-4 space-y-3 border-t border-white/70 pt-4">
+          <div>
+            <p className="text-xs font-semibold text-slate-500">Pessoas relacionadas</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {block.people.map((person) => (
+                <span
+                  key={person}
+                  className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+                >
+                  {person}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-slate-500">Tags clínicas</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {block.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Clique novamente para recolher o bloco.
+          </p>
+        </div>
+      )}
+    </button>
   )
 }
 
@@ -64,7 +119,7 @@ export function Timeline({ timelineData }) {
 
                   <div className="grid gap-3 md:grid-cols-2">
                     {monthGroup.blocks.map((block) => (
-                      <TimelineBlock key={block.title} block={block} />
+                      <TimelineBlock key={block.id} block={block} />
                     ))}
                   </div>
                 </div>
