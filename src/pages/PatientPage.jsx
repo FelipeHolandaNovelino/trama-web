@@ -28,13 +28,26 @@ function formatDateToBrazilian(dateString) {
   return `${day}/${month}/${year}`
 }
 
+function formatDateToInput(dateString) {
+  if (!dateString) return ""
+
+  if (dateString.includes("-")) {
+    return dateString
+  }
+
+  const [day, month, year] = dateString.split("/")
+  return `${year}-${month}-${day}`
+}
+
 function getYearFromDate(dateString) {
-  const [year] = dateString.split("-")
+  const inputDate = formatDateToInput(dateString)
+  const [year] = inputDate.split("-")
   return year
 }
 
 function getMonthLabelFromDate(dateString) {
-  const [, month] = dateString.split("-")
+  const inputDate = formatDateToInput(dateString)
+  const [, month] = inputDate.split("-")
   return monthLabels[Number(month) - 1]
 }
 
@@ -135,6 +148,15 @@ function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
     .filter((yearGroup) => yearGroup.months.length > 0)
 }
 
+function updateBlockInTimeline(currentTimeline, updatedBlock) {
+  const timelineWithoutOldBlock = removeBlockFromTimeline(
+    currentTimeline,
+    updatedBlock.id
+  )
+
+  return addBlockToTimeline(timelineWithoutOldBlock, updatedBlock)
+}
+
 function getInitialTimeline() {
   const savedTimeline = localStorage.getItem(STORAGE_KEY)
 
@@ -151,6 +173,7 @@ function getInitialTimeline() {
 
 export function PatientPage() {
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
+  const [editingBlock, setEditingBlock] = useState(null)
   const [timelineData, setTimelineData] = useState(getInitialTimeline)
 
   const existingBlocks = useMemo(() => {
@@ -163,9 +186,32 @@ export function PatientPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineData))
   }, [timelineData])
 
-  function handleSaveBlock(newBlock) {
+  function handleOpenAddSession() {
+    setEditingBlock(null)
+    setIsAddSessionModalOpen(true)
+  }
+
+  function handleEditBlock(block) {
+    setEditingBlock(block)
+    setIsAddSessionModalOpen(true)
+  }
+
+  function handleCloseModal() {
+    setEditingBlock(null)
+    setIsAddSessionModalOpen(false)
+  }
+
+  function handleSaveBlock(blockData) {
+    if (editingBlock) {
+      setTimelineData((currentTimeline) =>
+        updateBlockInTimeline(currentTimeline, blockData)
+      )
+      setEditingBlock(null)
+      return
+    }
+
     setTimelineData((currentTimeline) =>
-      addBlockToTimeline(currentTimeline, newBlock)
+      addBlockToTimeline(currentTimeline, blockData)
     )
   }
 
@@ -192,10 +238,7 @@ export function PatientPage() {
 
   return (
     <main className="flex-1 p-8">
-      <PatientHeader
-        patient={patient}
-        onAddSession={() => setIsAddSessionModalOpen(true)}
-      />
+      <PatientHeader patient={patient} onAddSession={handleOpenAddSession} />
 
       <div className="mt-4 flex justify-end">
         <button
@@ -210,15 +253,18 @@ export function PatientPage() {
         <Timeline
           timelineData={timelineData}
           onDeleteBlock={handleDeleteBlock}
+          onEditBlock={handleEditBlock}
         />
+
         <RightPanel patient={patient} />
       </div>
 
       <AddSessionModal
         isOpen={isAddSessionModalOpen}
-        onClose={() => setIsAddSessionModalOpen(false)}
+        onClose={handleCloseModal}
         onSaveBlock={handleSaveBlock}
         existingBlocks={existingBlocks}
+        initialBlock={editingBlock}
       />
     </main>
   )

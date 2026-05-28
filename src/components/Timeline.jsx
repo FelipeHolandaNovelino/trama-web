@@ -40,6 +40,7 @@ function GroupedTimelineView({
   groupedBlocks,
   onOpenConnectedBlock,
   onDeleteBlock,
+  onEditBlock,
 }) {
   const groups = Object.entries(groupedBlocks).sort(([firstName], [secondName]) =>
     firstName.localeCompare(secondName)
@@ -52,16 +53,12 @@ function GroupedTimelineView({
           key={groupName}
           className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
         >
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-bold text-violet-800">
-                {groupName}
-              </h3>
-              <p className="text-sm text-slate-500">
-                {blocks.length} bloco{blocks.length > 1 ? "s" : ""} conectado
-                {blocks.length > 1 ? "s" : ""}
-              </p>
-            </div>
+          <div className="mb-4">
+            <h3 className="text-xl font-bold text-violet-800">{groupName}</h3>
+            <p className="text-sm text-slate-500">
+              {blocks.length} bloco{blocks.length > 1 ? "s" : ""} conectado
+              {blocks.length > 1 ? "s" : ""}
+            </p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -71,6 +68,7 @@ function GroupedTimelineView({
                 block={block}
                 onOpenConnectedBlock={onOpenConnectedBlock}
                 onDeleteBlock={onDeleteBlock}
+                onEditBlock={onEditBlock}
               />
             ))}
           </div>
@@ -84,6 +82,7 @@ function ChronologicalTimelineView({
   timelineData,
   onOpenConnectedBlock,
   onDeleteBlock,
+  onEditBlock,
 }) {
   return (
     <div className="mt-8 space-y-10">
@@ -110,6 +109,7 @@ function ChronologicalTimelineView({
                       block={block}
                       onOpenConnectedBlock={onOpenConnectedBlock}
                       onDeleteBlock={onDeleteBlock}
+                      onEditBlock={onEditBlock}
                     />
                   ))}
                 </div>
@@ -122,7 +122,7 @@ function ChronologicalTimelineView({
   )
 }
 
-export function Timeline({ timelineData, onDeleteBlock }) {
+export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedMode, setSelectedMode] = useState("chronological")
 
@@ -187,6 +187,7 @@ export function Timeline({ timelineData, onDeleteBlock }) {
           timelineData={timelineData}
           onOpenConnectedBlock={handleOpenConnectedBlock}
           onDeleteBlock={onDeleteBlock}
+          onEditBlock={onEditBlock}
         />
       )}
 
@@ -195,6 +196,7 @@ export function Timeline({ timelineData, onDeleteBlock }) {
           groupedBlocks={emotionalGroups}
           onOpenConnectedBlock={handleOpenConnectedBlock}
           onDeleteBlock={onDeleteBlock}
+          onEditBlock={onEditBlock}
         />
       )}
 
@@ -203,6 +205,7 @@ export function Timeline({ timelineData, onDeleteBlock }) {
           groupedBlocks={relationalGroups}
           onOpenConnectedBlock={handleOpenConnectedBlock}
           onDeleteBlock={onDeleteBlock}
+          onEditBlock={onEditBlock}
         />
       )}
 

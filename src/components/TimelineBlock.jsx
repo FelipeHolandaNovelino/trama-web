@@ -4,6 +4,7 @@ export function TimelineBlock({
   block,
   onOpenConnectedBlock,
   onDeleteBlock,
+  onEditBlock,
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -40,15 +41,27 @@ export function TimelineBlock({
             Intensidade {block.intensity}/10
           </span>
 
-          <button
-            onClick={(event) => {
-              event.stopPropagation()
-              onDeleteBlock(block.id)
-            }}
-            className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
-          >
-            Excluir
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
+                onEditBlock(block)
+              }}
+              className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100"
+            >
+              Editar
+            </button>
+
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
+                onDeleteBlock(block.id)
+              }}
+              className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
+            >
+              Excluir
+            </button>
+          </div>
         </div>
       </div>
 

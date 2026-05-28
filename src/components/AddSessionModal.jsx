@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const availableEmotions = [
   "vergonha",
@@ -30,11 +30,23 @@ function toggleItem(list, item) {
   return [...list, item]
 }
 
+function formatDateToInput(dateString) {
+  if (!dateString) return ""
+
+  if (dateString.includes("-")) {
+    return dateString
+  }
+
+  const [day, month, year] = dateString.split("/")
+  return `${year}-${month}-${day}`
+}
+
 export function AddSessionModal({
   isOpen,
   onClose,
   onSaveBlock,
   existingBlocks = [],
+  initialBlock = null,
 }) {
   const [sessionDate, setSessionDate] = useState("")
   const [blockType, setBlockType] = useState("Evento")
@@ -48,11 +60,38 @@ export function AddSessionModal({
   const [connectionStrength, setConnectionStrength] = useState("moderada")
   const [connectionReason, setConnectionReason] = useState("")
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (!initialBlock) {
+      resetForm()
+      return
+    }
+
+    const firstConnection = initialBlock.connections?.[0]
+
+    setSessionDate(formatDateToInput(initialBlock.date))
+    setBlockType(initialBlock.type)
+    setBlockTitle(initialBlock.title)
+    setNarrativeText(initialBlock.text)
+    setSelectedEmotions(initialBlock.emotions || [])
+    setSelectedPeople(initialBlock.people || [])
+    setSelectedTags(initialBlock.tags || [])
+    setIntensity(initialBlock.intensity || 5)
+    setConnectedBlockId(firstConnection?.targetBlockId || "")
+    setConnectionStrength(firstConnection?.strength || "moderada")
+    setConnectionReason(firstConnection?.reason || "")
+  }, [isOpen, initialBlock])
 
   const selectedConnectedBlock = existingBlocks.find(
     (block) => block.id === connectedBlockId
   )
+
+  const availableConnectionBlocks = existingBlocks.filter(
+    (block) => block.id !== initialBlock?.id
+  )
+
+  if (!isOpen) return null
 
   function resetForm() {
     setSessionDate("")
@@ -91,8 +130,8 @@ export function AddSessionModal({
           ]
         : []
 
-    const newBlock = {
-      id: `block-${Date.now()}`,
+    const blockData = {
+      id: initialBlock?.id || `block-${Date.now()}`,
       type: blockType,
       title: blockTitle,
       date: sessionDate,
@@ -104,7 +143,7 @@ export function AddSessionModal({
       connections,
     }
 
-    onSaveBlock(newBlock)
+    onSaveBlock(blockData)
     resetForm()
     onClose()
   }
@@ -120,15 +159,19 @@ export function AddSessionModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-violet-700">Nova sessão</p>
+            <p className="text-sm font-semibold text-violet-700">
+              {initialBlock ? "Editar bloco" : "Nova sessão"}
+            </p>
 
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Registrar sessão do paciente
+              {initialBlock
+                ? "Editar bloco narrativo"
+                : "Registrar sessão do paciente"}
             </h2>
 
             <p className="mt-2 text-sm text-slate-500">
-              Crie blocos narrativos que poderão alimentar a timeline, os padrões
-              emocionais e as relações importantes.
+              Crie ou atualize blocos narrativos que alimentam a timeline, os
+              padrões emocionais e as relações importantes.
             </p>
           </div>
 
@@ -307,11 +350,6 @@ export function AddSessionModal({
             Conectar a evento anterior
           </p>
 
-          <p className="mt-1 text-sm text-violet-700">
-            Opcional. Use quando este bloco tiver relação clínica com outro
-            evento da timeline.
-          </p>
-
           <label className="mt-4 block space-y-2">
             <span className="text-sm font-medium text-slate-700">
               Evento relacionado
@@ -324,7 +362,7 @@ export function AddSessionModal({
             >
               <option value="">Nenhum evento conectado</option>
 
-              {existingBlocks.map((block) => (
+              {availableConnectionBlocks.map((block) => (
                 <option key={block.id} value={block.id}>
                   {block.title} — {block.date}
                 </option>
@@ -416,7 +454,7 @@ export function AddSessionModal({
             onClick={handleSaveBlock}
             className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-medium text-white"
           >
-            Salvar bloco
+            {initialBlock ? "Salvar alterações" : "Salvar bloco"}
           </button>
         </div>
       </div>
