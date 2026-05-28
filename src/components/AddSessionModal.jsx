@@ -30,7 +30,7 @@ function toggleItem(list, item) {
   return [...list, item]
 }
 
-export function AddSessionModal({ isOpen, onClose }) {
+export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
   const [sessionDate, setSessionDate] = useState("")
   const [blockType, setBlockType] = useState("Evento")
   const [narrativeText, setNarrativeText] = useState("")
@@ -41,10 +41,32 @@ export function AddSessionModal({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
+  function resetForm() {
+    setSessionDate("")
+    setBlockType("Evento")
+    setNarrativeText("")
+    setSelectedEmotions([])
+    setSelectedPeople([])
+    setSelectedTags([])
+    setIntensity(5)
+  }
+
+  function handleClose() {
+    resetForm()
+    onClose()
+  }
+
   function handleSaveBlock() {
+    if (!sessionDate || !narrativeText.trim()) {
+      alert("Preencha a data e o texto do bloco narrativo.")
+      return
+    }
+
     const newBlock = {
-      date: sessionDate,
+      id: `block-${Date.now()}`,
       type: blockType,
+      title: narrativeText.slice(0, 48),
+      date: sessionDate,
       text: narrativeText,
       emotions: selectedEmotions,
       people: selectedPeople,
@@ -52,14 +74,15 @@ export function AddSessionModal({ isOpen, onClose }) {
       intensity,
     }
 
-    console.log("Novo bloco narrativo:", newBlock)
+    onSaveBlock(newBlock)
+    resetForm()
     onClose()
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-6"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl"
@@ -67,9 +90,7 @@ export function AddSessionModal({ isOpen, onClose }) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-violet-700">
-              Nova sessão
-            </p>
+            <p className="text-sm font-semibold text-violet-700">Nova sessão</p>
 
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
               Registrar sessão do paciente
@@ -82,7 +103,7 @@ export function AddSessionModal({ isOpen, onClose }) {
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
           >
             Fechar
@@ -262,7 +283,7 @@ export function AddSessionModal({ isOpen, onClose }) {
 
         <div className="mt-6 flex justify-end gap-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-2xl border border-slate-200 px-5 py-3 text-sm text-slate-700"
           >
             Cancelar
