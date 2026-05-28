@@ -1,4 +1,4 @@
-export const timeline = [
+const baseTimeline = [
   {
     year: "2026",
     months: [
@@ -347,3 +347,93 @@ export const timeline = [
     ],
   },
 ]
+
+function createSessionDate(originalDate, sessionNumber) {
+  const [, month, year] = originalDate.split("/")
+  const daysBySession = {
+    2: "08",
+    3: "15",
+    4: "22",
+  }
+
+  return `${daysBySession[sessionNumber]}/${month}/${year}`
+}
+
+function createMonthlySessionBlocks(block) {
+  return [
+    {
+      ...block,
+      title: `Atendimento 1 — ${block.title}`,
+    },
+    {
+      id: `${block.id}-session-2`,
+      type: "Observação clínica",
+      title: `Atendimento 2 — aprofundamento do tema`,
+      date: createSessionDate(block.date, 2),
+      text: `O tema apresentado em "${block.title}" foi retomado em sessão. João demonstrou maior capacidade de nomear emoções associadas ao evento, embora ainda apresente ambivalência ao reconhecer suas próprias necessidades.`,
+      emotions: block.emotions.slice(0, 2),
+      people: block.people,
+      tags: [...block.tags, "continuidade"],
+      intensity: Math.max(block.intensity - 1, 1),
+      connections: [
+        {
+          targetBlockId: block.id,
+          targetTitle: block.title,
+          strength: "moderada",
+          reason:
+            "Este atendimento aprofunda o evento principal registrado no mesmo mês.",
+        },
+      ],
+    },
+    {
+      id: `${block.id}-session-3`,
+      type: "Insight",
+      title: `Atendimento 3 — padrão percebido`,
+      date: createSessionDate(block.date, 3),
+      text: `Durante a sessão, João começou a perceber como esse tema se repete em diferentes contextos. O foco clínico esteve na relação entre emoção, responsabilidade assumida e dificuldade de estabelecer limites.`,
+      emotions: ["ansiedade", "culpa", "esperança"],
+      people: block.people,
+      tags: ["padrão recorrente", "limites", ...block.tags.slice(0, 1)],
+      intensity: Math.max(block.intensity - 2, 1),
+      connections: [
+        {
+          targetBlockId: block.id,
+          targetTitle: block.title,
+          strength: "forte",
+          reason:
+            "O insight nasce diretamente da elaboração do evento principal do mês.",
+        },
+      ],
+    },
+    {
+      id: `${block.id}-session-4`,
+      type: "Marco positivo",
+      title: `Atendimento 4 — encaminhamento e reorganização`,
+      date: createSessionDate(block.date, 4),
+      text: `Ao final do ciclo mensal, João conseguiu formular uma pequena ação prática relacionada ao tema trabalhado. A sessão indicou maior clareza sobre seus limites e maior tolerância ao desconforto de não corresponder a todas as expectativas externas.`,
+      emotions: ["alívio", "coragem", "esperança"],
+      people: block.people,
+      tags: ["reparação", "autonomia", "continuidade"],
+      intensity: Math.max(block.intensity - 3, 1),
+      connections: [
+        {
+          targetBlockId: block.id,
+          targetTitle: block.title,
+          strength: "moderada",
+          reason:
+            "Este atendimento representa uma reorganização subjetiva após o evento principal do mês.",
+        },
+      ],
+    },
+  ]
+}
+
+export const timeline = baseTimeline.map((yearGroup) => ({
+  ...yearGroup,
+  months: yearGroup.months.map((monthGroup) => ({
+    ...monthGroup,
+    blocks: monthGroup.blocks.flatMap((block) =>
+      createMonthlySessionBlocks(block)
+    ),
+  })),
+}))

@@ -65,7 +65,7 @@ export function TimelineBlock({
         </div>
       </div>
 
-      <p className="mt-3 text-sm text-slate-600">{block.text}</p>
+     
 
       <div className="mt-3 flex flex-wrap gap-2">
         {block.emotions.map((emotion) => (
@@ -80,6 +80,10 @@ export function TimelineBlock({
 
       {isOpen && (
         <div className="mt-4 space-y-4 border-t border-white/70 pt-4">
+          <div>
+  <p className="text-xs font-semibold text-slate-500">Bloco narrativo</p>
+  <p className="mt-2 text-sm text-slate-600">{block.text}</p>
+</div>
           <div>
             <p className="text-xs font-semibold text-slate-500">
               Pessoas relacionadas
