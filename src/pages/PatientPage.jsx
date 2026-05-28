@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { timeline } from "../data/timeline"
 import { patient } from "../data/patient"
 import { PatientHeader } from "../components/PatientHeader"
@@ -124,6 +124,12 @@ export function PatientPage() {
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [timelineData, setTimelineData] = useState(getInitialTimeline)
 
+  const existingBlocks = useMemo(() => {
+    return timelineData.flatMap((yearGroup) =>
+      yearGroup.months.flatMap((monthGroup) => monthGroup.blocks)
+    )
+  }, [timelineData])
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineData))
   }, [timelineData])
@@ -170,6 +176,7 @@ export function PatientPage() {
         isOpen={isAddSessionModalOpen}
         onClose={() => setIsAddSessionModalOpen(false)}
         onSaveBlock={handleSaveBlock}
+        existingBlocks={existingBlocks}
       />
     </main>
   )

@@ -30,7 +30,12 @@ function toggleItem(list, item) {
   return [...list, item]
 }
 
-export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
+export function AddSessionModal({
+  isOpen,
+  onClose,
+  onSaveBlock,
+  existingBlocks = [],
+}) {
   const [sessionDate, setSessionDate] = useState("")
   const [blockType, setBlockType] = useState("Evento")
   const [blockTitle, setBlockTitle] = useState("")
@@ -39,8 +44,15 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
   const [selectedPeople, setSelectedPeople] = useState([])
   const [selectedTags, setSelectedTags] = useState([])
   const [intensity, setIntensity] = useState(5)
+  const [connectedBlockId, setConnectedBlockId] = useState("")
+  const [connectionStrength, setConnectionStrength] = useState("moderada")
+  const [connectionReason, setConnectionReason] = useState("")
 
   if (!isOpen) return null
+
+  const selectedConnectedBlock = existingBlocks.find(
+    (block) => block.id === connectedBlockId
+  )
 
   function resetForm() {
     setSessionDate("")
@@ -51,6 +63,9 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
     setSelectedPeople([])
     setSelectedTags([])
     setIntensity(5)
+    setConnectedBlockId("")
+    setConnectionStrength("moderada")
+    setConnectionReason("")
   }
 
   function handleClose() {
@@ -64,6 +79,18 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
       return
     }
 
+    const connections =
+      selectedConnectedBlock && connectionReason.trim()
+        ? [
+            {
+              targetBlockId: selectedConnectedBlock.id,
+              targetTitle: selectedConnectedBlock.title,
+              strength: connectionStrength,
+              reason: connectionReason,
+            },
+          ]
+        : []
+
     const newBlock = {
       id: `block-${Date.now()}`,
       type: blockType,
@@ -74,6 +101,7 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
       people: selectedPeople,
       tags: selectedTags,
       intensity,
+      connections,
     }
 
     onSaveBlock(newBlock)
@@ -86,11 +114,10 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-6"
       onClick={handleClose}
     >
-        <div
-  className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
-  onClick={(event) => event.stopPropagation()}
->
-
+      <div
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-violet-700">Nova sessão</p>
@@ -275,6 +302,71 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
           />
         </label>
 
+        <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
+          <p className="text-sm font-semibold text-violet-900">
+            Conectar a evento anterior
+          </p>
+
+          <p className="mt-1 text-sm text-violet-700">
+            Opcional. Use quando este bloco tiver relação clínica com outro
+            evento da timeline.
+          </p>
+
+          <label className="mt-4 block space-y-2">
+            <span className="text-sm font-medium text-slate-700">
+              Evento relacionado
+            </span>
+
+            <select
+              value={connectedBlockId}
+              onChange={(event) => setConnectedBlockId(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+            >
+              <option value="">Nenhum evento conectado</option>
+
+              {existingBlocks.map((block) => (
+                <option key={block.id} value={block.id}>
+                  {block.title} — {block.date}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {connectedBlockId && (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Força da ligação
+                </span>
+
+                <select
+                  value={connectionStrength}
+                  onChange={(event) => setConnectionStrength(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                >
+                  <option value="leve">Leve</option>
+                  <option value="moderada">Moderada</option>
+                  <option value="forte">Forte</option>
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Motivo da conexão
+                </span>
+
+                <input
+                  type="text"
+                  value={connectionReason}
+                  onChange={(event) => setConnectionReason(event.target.value)}
+                  placeholder="Ex: repetição de invalidação"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
         <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm font-semibold text-slate-700">
             Prévia do bloco
@@ -300,6 +392,16 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
               )
             )}
           </div>
+
+          {selectedConnectedBlock && connectionReason && (
+            <div className="mt-4 rounded-2xl bg-white p-3 text-sm text-slate-600">
+              Conectado a{" "}
+              <strong className="text-slate-900">
+                {selectedConnectedBlock.title}
+              </strong>{" "}
+              com ligação <strong>{connectionStrength}</strong>.
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
