@@ -1,26 +1,11 @@
 import { useEffect, useState } from "react"
 
-const availableEmotions = [
-  "vergonha",
-  "medo",
-  "culpa",
-  "alívio",
-  "raiva",
-  "tristeza",
-  "felicidade",
-  "abandono",
-]
+import {
+  availableEmotions,
+  availablePeople,
+  availableTags,
+} from "../data/sessionOptions"
 
-const availablePeople = ["Mãe", "Pai", "Marido", "Filha", "Chefe"]
-
-const availableTags = [
-  "invalidação",
-  "autonomia",
-  "trabalho",
-  "abandono",
-  "exposição",
-  "reparação",
-]
 
 function toggleItem(list, item) {
   if (list.includes(item)) {
