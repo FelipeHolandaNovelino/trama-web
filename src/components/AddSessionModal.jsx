@@ -33,6 +33,7 @@ function toggleItem(list, item) {
 export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
   const [sessionDate, setSessionDate] = useState("")
   const [blockType, setBlockType] = useState("Evento")
+  const [blockTitle, setBlockTitle] = useState("")
   const [narrativeText, setNarrativeText] = useState("")
   const [selectedEmotions, setSelectedEmotions] = useState([])
   const [selectedPeople, setSelectedPeople] = useState([])
@@ -44,6 +45,7 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
   function resetForm() {
     setSessionDate("")
     setBlockType("Evento")
+    setBlockTitle("")
     setNarrativeText("")
     setSelectedEmotions([])
     setSelectedPeople([])
@@ -57,15 +59,15 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
   }
 
   function handleSaveBlock() {
-    if (!sessionDate || !narrativeText.trim()) {
-      alert("Preencha a data e o texto do bloco narrativo.")
+    if (!sessionDate || !blockTitle.trim() || !narrativeText.trim()) {
+      alert("Preencha a data, o título e o texto do bloco narrativo.")
       return
     }
 
     const newBlock = {
       id: `block-${Date.now()}`,
       type: blockType,
-      title: narrativeText.slice(0, 48),
+      title: blockTitle,
       date: sessionDate,
       text: narrativeText,
       emotions: selectedEmotions,
@@ -84,10 +86,11 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-6"
       onClick={handleClose}
     >
-      <div
-        className="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
+        <div
+  className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+  onClick={(event) => event.stopPropagation()}
+>
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-violet-700">Nova sessão</p>
@@ -142,6 +145,20 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
             </select>
           </label>
         </div>
+
+        <label className="mt-4 block space-y-2">
+          <span className="text-sm font-medium text-slate-700">
+            Título do bloco
+          </span>
+
+          <input
+            type="text"
+            value={blockTitle}
+            onChange={(event) => setBlockTitle(event.target.value)}
+            placeholder="Ex: Discussão com o chefe"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+          />
+        </label>
 
         <label className="mt-4 block space-y-2">
           <span className="text-sm font-medium text-slate-700">
@@ -262,6 +279,10 @@ export function AddSessionModal({ isOpen, onClose, onSaveBlock }) {
           <p className="text-sm font-semibold text-slate-700">
             Prévia do bloco
           </p>
+
+          <h3 className="mt-2 font-semibold text-slate-900">
+            {blockTitle || "Título do bloco"}
+          </h3>
 
           <p className="mt-2 text-sm text-slate-600">
             {narrativeText || "O texto do bloco aparecerá aqui."}
