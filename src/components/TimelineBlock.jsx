@@ -1,6 +1,10 @@
 import { useState } from "react"
 
-export function TimelineBlock({ block, onOpenConnectedBlock }) {
+export function TimelineBlock({
+  block,
+  onOpenConnectedBlock,
+  onDeleteBlock,
+}) {
   const [isOpen, setIsOpen] = useState(false)
 
   const colorByType = {
@@ -8,6 +12,7 @@ export function TimelineBlock({ block, onOpenConnectedBlock }) {
     "Evento traumático": "border-rose-200 bg-rose-50",
     Insight: "border-amber-200 bg-amber-50",
     Evento: "border-blue-200 bg-blue-50",
+    "Observação clínica": "border-slate-200 bg-slate-50",
   }
 
   const connectionColorByStrength = {
@@ -30,9 +35,21 @@ export function TimelineBlock({ block, onOpenConnectedBlock }) {
           <p className="mt-1 text-xs text-slate-500">{block.date}</p>
         </div>
 
-        <span className="rounded-full bg-white/70 px-2 py-1 text-xs text-slate-700">
-          Intensidade {block.intensity}/10
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className="rounded-full bg-white/70 px-2 py-1 text-xs text-slate-700">
+            Intensidade {block.intensity}/10
+          </span>
+
+          <button
+            onClick={(event) => {
+              event.stopPropagation()
+              onDeleteBlock(block.id)
+            }}
+            className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
+          >
+            Excluir
+          </button>
+        </div>
       </div>
 
       <p className="mt-3 text-sm text-slate-600">{block.text}</p>

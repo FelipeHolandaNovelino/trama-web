@@ -36,7 +36,11 @@ function groupBlocksByArrayField(blocks, fieldName) {
   }, {})
 }
 
-function GroupedTimelineView({ groupedBlocks, onOpenConnectedBlock }) {
+function GroupedTimelineView({
+  groupedBlocks,
+  onOpenConnectedBlock,
+  onDeleteBlock,
+}) {
   const groups = Object.entries(groupedBlocks).sort(([firstName], [secondName]) =>
     firstName.localeCompare(secondName)
   )
@@ -66,6 +70,7 @@ function GroupedTimelineView({ groupedBlocks, onOpenConnectedBlock }) {
                 key={`${groupName}-${block.id}`}
                 block={block}
                 onOpenConnectedBlock={onOpenConnectedBlock}
+                onDeleteBlock={onDeleteBlock}
               />
             ))}
           </div>
@@ -75,7 +80,11 @@ function GroupedTimelineView({ groupedBlocks, onOpenConnectedBlock }) {
   )
 }
 
-function ChronologicalTimelineView({ timelineData, onOpenConnectedBlock }) {
+function ChronologicalTimelineView({
+  timelineData,
+  onOpenConnectedBlock,
+  onDeleteBlock,
+}) {
   return (
     <div className="mt-8 space-y-10">
       {timelineData.map((yearGroup) => (
@@ -100,6 +109,7 @@ function ChronologicalTimelineView({ timelineData, onOpenConnectedBlock }) {
                       key={block.id}
                       block={block}
                       onOpenConnectedBlock={onOpenConnectedBlock}
+                      onDeleteBlock={onDeleteBlock}
                     />
                   ))}
                 </div>
@@ -112,7 +122,7 @@ function ChronologicalTimelineView({ timelineData, onOpenConnectedBlock }) {
   )
 }
 
-export function Timeline({ timelineData }) {
+export function Timeline({ timelineData, onDeleteBlock }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedMode, setSelectedMode] = useState("chronological")
 
@@ -176,6 +186,7 @@ export function Timeline({ timelineData }) {
         <ChronologicalTimelineView
           timelineData={timelineData}
           onOpenConnectedBlock={handleOpenConnectedBlock}
+          onDeleteBlock={onDeleteBlock}
         />
       )}
 
@@ -183,6 +194,7 @@ export function Timeline({ timelineData }) {
         <GroupedTimelineView
           groupedBlocks={emotionalGroups}
           onOpenConnectedBlock={handleOpenConnectedBlock}
+          onDeleteBlock={onDeleteBlock}
         />
       )}
 
@@ -190,6 +202,7 @@ export function Timeline({ timelineData }) {
         <GroupedTimelineView
           groupedBlocks={relationalGroups}
           onOpenConnectedBlock={handleOpenConnectedBlock}
+          onDeleteBlock={onDeleteBlock}
         />
       )}
 

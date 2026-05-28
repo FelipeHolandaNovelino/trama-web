@@ -106,6 +106,35 @@ function addBlockToTimeline(currentTimeline, newBlock) {
   })
 }
 
+function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
+  return currentTimeline
+    .map((yearGroup) => {
+      const months = yearGroup.months
+        .map((monthGroup) => {
+          const blocks = monthGroup.blocks
+            .filter((block) => block.id !== blockIdToRemove)
+            .map((block) => ({
+              ...block,
+              connections: (block.connections || []).filter(
+                (connection) => connection.targetBlockId !== blockIdToRemove
+              ),
+            }))
+
+          return {
+            ...monthGroup,
+            blocks,
+          }
+        })
+        .filter((monthGroup) => monthGroup.blocks.length > 0)
+
+      return {
+        ...yearGroup,
+        months,
+      }
+    })
+    .filter((yearGroup) => yearGroup.months.length > 0)
+}
+
 function getInitialTimeline() {
   const savedTimeline = localStorage.getItem(STORAGE_KEY)
 
@@ -140,6 +169,16 @@ export function PatientPage() {
     )
   }
 
+  function handleDeleteBlock(blockId) {
+    const confirmed = confirm("Tem certeza que deseja excluir este bloco?")
+
+    if (!confirmed) return
+
+    setTimelineData((currentTimeline) =>
+      removeBlockFromTimeline(currentTimeline, blockId)
+    )
+  }
+
   function handleResetTimeline() {
     const confirmed = confirm(
       "Tem certeza que deseja restaurar a timeline inicial? Os blocos criados localmente serão apagados."
@@ -168,7 +207,10 @@ export function PatientPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
-        <Timeline timelineData={timelineData} />
+        <Timeline
+          timelineData={timelineData}
+          onDeleteBlock={handleDeleteBlock}
+        />
         <RightPanel patient={patient} />
       </div>
 

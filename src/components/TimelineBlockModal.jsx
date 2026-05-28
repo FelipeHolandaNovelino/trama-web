@@ -69,7 +69,9 @@ export function TimelineBlockModal({ block, onClose }) {
           </div>
 
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-semibold text-slate-500">Tags clínicas</p>
+            <p className="text-xs font-semibold text-slate-500">
+              Tags clínicas
+            </p>
 
             <div className="mt-2 flex flex-wrap gap-2">
               {block.tags.map((tag) => (
