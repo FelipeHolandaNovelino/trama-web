@@ -25,6 +25,12 @@ const monthLabels = [
 ]
 
 function formatDateToBrazilian(dateString) {
+  if (!dateString) return ""
+
+  if (dateString.includes("/")) {
+    return dateString
+  }
+
   const [year, month, day] = dateString.split("-")
   return `${day}/${month}/${year}`
 }
@@ -56,14 +62,89 @@ function sortTimelineByYearDesc(timelineData) {
   return [...timelineData].sort((a, b) => Number(b.year) - Number(a.year))
 }
 
-function addBlockToTimeline(currentTimeline, newBlock) {
-  const year = getYearFromDate(newBlock.date)
-  const month = getMonthLabelFromDate(newBlock.date)
+function getSessionsFromMonth(monthGroup) {
+  if (monthGroup.sessions) {
+    return monthGroup.sessions
+  }
+
+  const blocks = monthGroup.blocks || []
+
+  const sessionsByDate = blocks.reduce((sessions, block) => {
+    if (!sessions[block.date]) {
+      sessions[block.date] = []
+    }
+
+    sessions[block.date].push(block)
+
+    return sessions
+  }, {})
+
+  return Object.entries(sessionsByDate).map(([date, sessionBlocks], index) => ({
+    id: `session-${date}-${index}`,
+    date,
+    title: `Sessão ${index + 1}`,
+    summary: sessionBlocks[0]?.text || "",
+    blocks: sessionBlocks,
+  }))
+}
+
+function getAllBlocksFromTimeline(timelineData) {
+  return timelineData.flatMap((yearGroup) =>
+    yearGroup.months.flatMap((monthGroup) =>
+      getSessionsFromMonth(monthGroup).flatMap((session) => session.blocks)
+    )
+  )
+}
+
+function createSessionFromBlock(newBlock) {
+  const formattedSessionDate = formatDateToBrazilian(
+    newBlock.sessionDate || newBlock.date
+  )
+
+  const formattedEventDate = formatDateToBrazilian(
+    newBlock.eventDate || newBlock.date
+  )
 
   const formattedBlock = {
     ...newBlock,
-    date: formatDateToBrazilian(newBlock.date),
+    sessionDate: formattedSessionDate,
+    eventDate: formattedEventDate,
+    date: formattedEventDate,
   }
+
+  return {
+    id: `session-${Date.now()}`,
+    date: formattedSessionDate,
+    title: `Sessão em ${formattedSessionDate}`,
+    summary: formattedBlock.text,
+    blocks: [formattedBlock],
+  }
+}
+
+function createSessionFromBlocks(sessionData) {
+  const formattedSessionDate = formatDateToBrazilian(sessionData.date)
+
+  return {
+    ...sessionData,
+    date: formattedSessionDate,
+    blocks: sessionData.blocks.map((block) => {
+      const formattedEventDate = formatDateToBrazilian(
+        block.eventDate || block.date
+      )
+
+      return {
+        ...block,
+        sessionDate: formattedSessionDate,
+        eventDate: formattedEventDate,
+        date: formattedEventDate,
+      }
+    }),
+  }
+}
+
+function addSessionToTimeline(currentTimeline, newSession) {
+  const year = getYearFromDate(newSession.date)
+  const month = getMonthLabelFromDate(newSession.date)
 
   const yearExists = currentTimeline.some((yearGroup) => yearGroup.year === year)
 
@@ -74,7 +155,7 @@ function addBlockToTimeline(currentTimeline, newBlock) {
         months: [
           {
             month,
-            blocks: [formattedBlock],
+            sessions: [newSession],
           },
         ],
       },
@@ -97,7 +178,7 @@ function addBlockToTimeline(currentTimeline, newBlock) {
         months: [
           {
             month,
-            blocks: [formattedBlock],
+            sessions: [newSession],
           },
           ...yearGroup.months,
         ],
@@ -111,9 +192,12 @@ function addBlockToTimeline(currentTimeline, newBlock) {
           return monthGroup
         }
 
+        const existingSessions = getSessionsFromMonth(monthGroup)
+
         return {
           ...monthGroup,
-          blocks: [formattedBlock, ...monthGroup.blocks],
+          blocks: undefined,
+          sessions: [newSession, ...existingSessions],
         }
       }),
     }
@@ -125,21 +209,32 @@ function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
     .map((yearGroup) => {
       const months = yearGroup.months
         .map((monthGroup) => {
-          const blocks = monthGroup.blocks
-            .filter((block) => block.id !== blockIdToRemove)
-            .map((block) => ({
-              ...block,
-              connections: (block.connections || []).filter(
-                (connection) => connection.targetBlockId !== blockIdToRemove
-              ),
-            }))
+          const sessions = getSessionsFromMonth(monthGroup)
+            .map((session) => {
+              const blocks = session.blocks
+                .filter((block) => block.id !== blockIdToRemove)
+                .map((block) => ({
+                  ...block,
+                  connections: (block.connections || []).filter(
+                    (connection) =>
+                      connection.targetBlockId !== blockIdToRemove
+                  ),
+                }))
+
+              return {
+                ...session,
+                blocks,
+              }
+            })
+            .filter((session) => session.blocks.length > 0)
 
           return {
             ...monthGroup,
-            blocks,
+            blocks: undefined,
+            sessions,
           }
         })
-        .filter((monthGroup) => monthGroup.blocks.length > 0)
+        .filter((monthGroup) => getSessionsFromMonth(monthGroup).length > 0)
 
       return {
         ...yearGroup,
@@ -155,7 +250,9 @@ function updateBlockInTimeline(currentTimeline, updatedBlock) {
     updatedBlock.id
   )
 
-  return addBlockToTimeline(timelineWithoutOldBlock, updatedBlock)
+  const newSession = createSessionFromBlock(updatedBlock)
+
+  return addSessionToTimeline(timelineWithoutOldBlock, newSession)
 }
 
 function getInitialTimeline() {
@@ -178,9 +275,7 @@ export function PatientPage() {
   const [timelineData, setTimelineData] = useState(getInitialTimeline)
 
   const existingBlocks = useMemo(() => {
-    return timelineData.flatMap((yearGroup) =>
-      yearGroup.months.flatMap((monthGroup) => monthGroup.blocks)
-    )
+    return getAllBlocksFromTimeline(timelineData)
   }, [timelineData])
 
   useEffect(() => {
@@ -207,12 +302,23 @@ export function PatientPage() {
       setTimelineData((currentTimeline) =>
         updateBlockInTimeline(currentTimeline, blockData)
       )
+
       setEditingBlock(null)
       return
     }
 
+    const newSession = createSessionFromBlock(blockData)
+
     setTimelineData((currentTimeline) =>
-      addBlockToTimeline(currentTimeline, blockData)
+      addSessionToTimeline(currentTimeline, newSession)
+    )
+  }
+
+  function handleSaveSession(sessionData) {
+    const newSession = createSessionFromBlocks(sessionData)
+
+    setTimelineData((currentTimeline) =>
+      addSessionToTimeline(currentTimeline, newSession)
     )
   }
 
@@ -257,16 +363,18 @@ export function PatientPage() {
           onEditBlock={handleEditBlock}
         />
 
-        <RightPanel patient={patient} />
+        <RightPanel patient={patient} timelineData={timelineData} />
       </div>
+
       <div className="mt-6">
-  <PatientMirrorTimeline timelineData={timelineData} />
-</div>
+        <PatientMirrorTimeline timelineData={timelineData} />
+      </div>
 
       <AddSessionModal
         isOpen={isAddSessionModalOpen}
         onClose={handleCloseModal}
         onSaveBlock={handleSaveBlock}
+        onSaveSession={handleSaveSession}
         existingBlocks={existingBlocks}
         initialBlock={editingBlock}
       />
