@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { TimelineBlockModal } from "./TimelineBlockModal"
 import { TimelineBlock } from "./TimelineBlock"
+import { SessionModal } from "./SessionModal"
 
 const timelineModes = [
   {
@@ -209,7 +210,10 @@ function GroupedTimelineView({
 function MiniBlockCard({ block, onOpenBlock }) {
   return (
     <button
-      onClick={() => onOpenBlock(block)}
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpenBlock(block)
+      }}
       className={`min-w-[132px] rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
         colorByType[block.type] || "border-slate-200 bg-slate-50 text-slate-800"
       }`}
@@ -243,14 +247,14 @@ function MiniBlockCard({ block, onOpenBlock }) {
 function SessionRow({
   session,
   sessionNumber,
+  onOpenSession,
   onOpenBlock,
-  onEditBlock,
-  onDeleteBlock,
 }) {
-  const firstBlock = session.blocks?.[0]
-
   return (
-    <div className="grid grid-cols-[88px_150px_1fr_44px] items-stretch border-b border-slate-100 last:border-b-0">
+    <button
+      onClick={() => onOpenSession(session)}
+      className="grid w-full grid-cols-[88px_150px_1fr_44px] items-stretch border-b border-slate-100 text-left transition last:border-b-0 hover:bg-slate-50"
+    >
       <div className="flex flex-col items-center justify-center border-r border-slate-100 px-4 py-5">
         <p className="text-2xl font-bold text-slate-900">
           {getDayFromDate(session.date)}
@@ -280,44 +284,17 @@ function SessionRow({
         ))}
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-2">
-        {firstBlock && (
-          <>
-            <button
-              onClick={() => onOpenBlock(firstBlock)}
-              className="text-xl text-slate-400 hover:text-violet-700"
-              title="Abrir sessão"
-            >
-              ›
-            </button>
-
-            <div className="flex flex-col gap-1">
-              <button
-                onClick={() => onEditBlock(firstBlock)}
-                className="text-[10px] font-medium text-violet-700 hover:underline"
-              >
-                Editar
-              </button>
-
-              <button
-                onClick={() => onDeleteBlock(firstBlock.id)}
-                className="text-[10px] font-medium text-rose-700 hover:underline"
-              >
-                Excluir
-              </button>
-            </div>
-          </>
-        )}
+      <div className="flex items-center justify-center text-xl text-slate-400">
+        ›
       </div>
-    </div>
+    </button>
   )
 }
 
 function ChronologicalTimelineView({
   timelineData,
+  onOpenSession,
   onOpenBlock,
-  onDeleteBlock,
-  onEditBlock,
 }) {
   const years = getAvailableYears(timelineData)
   const [selectedYear, setSelectedYear] = useState(years[0] || "")
@@ -363,7 +340,7 @@ function ChronologicalTimelineView({
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-12 rounded-2xl border border-slate-200 bg-white">
+      <div className="mt-4 grid grid-cols-12 overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {monthLabels.map((month) => {
           const isActive = selectedMonth === month
           const count = getMonthSessions(yearGroup, month).length
@@ -411,7 +388,7 @@ function ChronologicalTimelineView({
           </div>
 
           <p className="mt-7 text-sm leading-relaxed text-slate-600">
-            Foco em reduzir sobrecarga e fortalecer limites saudáveis.
+            Clique em uma sessão para abrir todos os blocos daquele atendimento.
           </p>
 
           <div className="mt-8 h-20 rounded-2xl bg-violet-50 p-3">
@@ -470,9 +447,8 @@ function ChronologicalTimelineView({
                   key={session.id}
                   session={session}
                   sessionNumber={sessions.length - index}
+                  onOpenSession={onOpenSession}
                   onOpenBlock={onOpenBlock}
-                  onDeleteBlock={onDeleteBlock}
-                  onEditBlock={onEditBlock}
                 />
               ))}
             </div>
@@ -485,6 +461,7 @@ function ChronologicalTimelineView({
 
 export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
+  const [selectedSession, setSelectedSession] = useState(null)
   const [selectedMode, setSelectedMode] = useState("chronological")
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
@@ -518,6 +495,10 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
 
   function handleOpenBlock(block) {
     setSelectedBlock(block)
+  }
+
+  function handleOpenSession(session) {
+    setSelectedSession(session)
   }
 
   return (
@@ -557,9 +538,8 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
       {selectedMode === "chronological" && (
         <ChronologicalTimelineView
           timelineData={timelineData}
+          onOpenSession={handleOpenSession}
           onOpenBlock={handleOpenBlock}
-          onDeleteBlock={onDeleteBlock}
-          onEditBlock={onEditBlock}
         />
       )}
 
@@ -580,6 +560,14 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
           onEditBlock={onEditBlock}
         />
       )}
+
+      <SessionModal
+        session={selectedSession}
+        onClose={() => setSelectedSession(null)}
+        onOpenBlock={handleOpenBlock}
+        onEditBlock={onEditBlock}
+        onDeleteBlock={onDeleteBlock}
+      />
 
       <TimelineBlockModal
         block={selectedBlock}
