@@ -11,12 +11,12 @@ const timelineModes = [
   {
     id: "emotional",
     label: "Emocional",
-    description: "Eventos agrupados pelas emoções recorrentes",
+    description: "Blocos agrupados pelas emoções recorrentes",
   },
   {
     id: "relational",
     label: "Relacional",
-    description: "Eventos agrupados pelas pessoas importantes",
+    description: "Blocos agrupados pelas pessoas importantes",
   },
 ]
 
@@ -58,6 +58,48 @@ const colorByType = {
   "Observação clínica": "border-blue-200 bg-blue-50 text-blue-800",
 }
 
+function getSessionsFromMonth(monthGroup) {
+  if (!monthGroup) return []
+
+  if (monthGroup.sessions) {
+    return monthGroup.sessions
+  }
+
+  const blocks = monthGroup.blocks || []
+
+  const sessionsByDate = blocks.reduce((sessions, block) => {
+    const date = block.sessionDate || block.date
+
+    if (!sessions[date]) {
+      sessions[date] = []
+    }
+
+    sessions[date].push(block)
+
+    return sessions
+  }, {})
+
+  return Object.entries(sessionsByDate).map(([date, sessionBlocks], index) => ({
+    id: `session-${date}-${index}`,
+    date,
+    title: `Sessão ${index + 1}`,
+    summary: sessionBlocks[0]?.text || "",
+    blocks: sessionBlocks,
+  }))
+}
+
+function getAllBlocks(timelineData) {
+  return timelineData
+    .flatMap((yearGroup) =>
+      yearGroup.months.flatMap((monthGroup) =>
+        getSessionsFromMonth(monthGroup).flatMap((session) =>
+          session.blocks || []
+        )
+      )
+    )
+    .filter(Boolean)
+}
+
 function groupBlocksByArrayField(blocks, fieldName) {
   return blocks.reduce((groups, block) => {
     const values = block[fieldName] || []
@@ -74,12 +116,6 @@ function groupBlocksByArrayField(blocks, fieldName) {
   }, {})
 }
 
-function getAllBlocks(timelineData) {
-  return timelineData.flatMap((yearGroup) =>
-    yearGroup.months.flatMap((monthGroup) => monthGroup.blocks)
-  )
-}
-
 function getAvailableYears(timelineData) {
   return timelineData.map((yearGroup) => yearGroup.year)
 }
@@ -94,17 +130,9 @@ function getMonthGroup(yearGroup, selectedMonth) {
   return yearGroup.months.find((monthGroup) => monthGroup.month === selectedMonth)
 }
 
-function getMonthCount(yearGroup, month) {
+function getMonthSessions(yearGroup, month) {
   const monthGroup = getMonthGroup(yearGroup, month)
-  return monthGroup?.blocks.length || 0
-}
-
-function getTotalBlocksInYear(yearGroup) {
-  if (!yearGroup) return 0
-
-  return yearGroup.months.reduce((total, monthGroup) => {
-    return total + monthGroup.blocks.length
-  }, 0)
+  return getSessionsFromMonth(monthGroup)
 }
 
 function getDayFromDate(date) {
@@ -121,30 +149,18 @@ function getDayFromDate(date) {
   return "--"
 }
 
-function groupBlocksIntoSessions(blocks) {
-  const sessionsByDate = blocks.reduce((sessions, block) => {
-    const date = block.date
+function getMonthNumberFromDate(date) {
+  if (!date) return ""
 
-    if (!sessions[date]) {
-      sessions[date] = []
-    }
+  if (date.includes("/")) {
+    return date.split("/")[1]
+  }
 
-    sessions[date].push(block)
+  if (date.includes("-")) {
+    return date.split("-")[1]
+  }
 
-    return sessions
-  }, {})
-
-  return Object.entries(sessionsByDate)
-    .map(([date, sessionBlocks], index) => ({
-      id: `session-${date}`,
-      date,
-      day: getDayFromDate(date),
-      title: `Sessão ${index + 1}`,
-      blocks: sessionBlocks,
-    }))
-    .sort((firstSession, secondSession) => {
-      return Number(secondSession.day) - Number(firstSession.day)
-    })
+  return ""
 }
 
 function GroupedTimelineView({
@@ -190,10 +206,11 @@ function GroupedTimelineView({
   )
 }
 
-function MiniBlockCard({ block, onOpenBlock, onEditBlock, onDeleteBlock }) {
+function MiniBlockCard({ block, onOpenBlock }) {
   return (
-    <div
-      className={`min-w-[135px] rounded-xl border p-3 ${
+    <button
+      onClick={() => onOpenBlock(block)}
+      className={`min-w-[132px] rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
         colorByType[block.type] || "border-slate-200 bg-slate-50 text-slate-800"
       }`}
     >
@@ -205,15 +222,12 @@ function MiniBlockCard({ block, onOpenBlock, onEditBlock, onDeleteBlock }) {
         </span>
       </div>
 
-      <button
-        onClick={() => onOpenBlock(block)}
-        className="mt-2 line-clamp-2 text-left text-xs font-semibold text-slate-900 hover:underline"
-      >
+      <p className="mt-2 line-clamp-3 text-xs font-semibold text-slate-900">
         {block.title}
-      </button>
+      </p>
 
       <div className="mt-2 flex flex-wrap gap-1">
-        {block.emotions.slice(0, 2).map((emotion) => (
+        {(block.emotions || []).slice(0, 2).map((emotion) => (
           <span
             key={emotion}
             className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] text-slate-700"
@@ -222,23 +236,7 @@ function MiniBlockCard({ block, onOpenBlock, onEditBlock, onDeleteBlock }) {
           </span>
         ))}
       </div>
-
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={() => onEditBlock(block)}
-          className="text-[10px] font-medium text-violet-700 hover:underline"
-        >
-          Editar
-        </button>
-
-        <button
-          onClick={() => onDeleteBlock(block.id)}
-          className="text-[10px] font-medium text-rose-700 hover:underline"
-        >
-          Excluir
-        </button>
-      </div>
-    </div>
+    </button>
   )
 }
 
@@ -249,16 +247,20 @@ function SessionRow({
   onEditBlock,
   onDeleteBlock,
 }) {
-  const mainBlock = session.blocks[0]
+  const firstBlock = session.blocks?.[0]
 
   return (
-    <div className="grid grid-cols-[88px_160px_1fr_36px] items-stretch border-b border-slate-100 last:border-b-0">
+    <div className="grid grid-cols-[88px_150px_1fr_44px] items-stretch border-b border-slate-100 last:border-b-0">
       <div className="flex flex-col items-center justify-center border-r border-slate-100 px-4 py-5">
-        <p className="text-2xl font-bold text-slate-900">{session.day}</p>
-        <p className="text-xs font-medium text-slate-500">
-          {session.date.includes("/") ? session.date.split("/")[1] : ""}
+        <p className="text-2xl font-bold text-slate-900">
+          {getDayFromDate(session.date)}
         </p>
-        <p className="mt-1 text-xs text-slate-400">Qua • 16:00</p>
+
+        <p className="text-xs font-medium text-slate-500">
+          {getMonthNumberFromDate(session.date)}
+        </p>
+
+        <p className="mt-1 text-xs text-slate-400">16:00</p>
       </div>
 
       <div className="flex flex-col justify-center border-r border-slate-100 px-5 py-5">
@@ -267,48 +269,62 @@ function SessionRow({
         </p>
 
         <p className="mt-1 text-xs text-slate-500">
-          {session.blocks.length} bloco{session.blocks.length > 1 ? "s" : ""} na sessão
+          {(session.blocks || []).length} bloco
+          {(session.blocks || []).length > 1 ? "s" : ""} na sessão
         </p>
       </div>
 
       <div className="flex gap-3 overflow-x-auto px-5 py-4">
-        {session.blocks.map((block) => (
-          <MiniBlockCard
-            key={block.id}
-            block={block}
-            onOpenBlock={onOpenBlock}
-            onEditBlock={onEditBlock}
-            onDeleteBlock={onDeleteBlock}
-          />
+        {(session.blocks || []).map((block) => (
+          <MiniBlockCard key={block.id} block={block} onOpenBlock={onOpenBlock} />
         ))}
       </div>
 
-      <button
-        onClick={() => onOpenBlock(mainBlock)}
-        className="flex items-center justify-center text-slate-400 hover:text-violet-700"
-        title="Abrir primeiro bloco da sessão"
-      >
-        ›
-      </button>
+      <div className="flex flex-col items-center justify-center gap-2">
+        {firstBlock && (
+          <>
+            <button
+              onClick={() => onOpenBlock(firstBlock)}
+              className="text-xl text-slate-400 hover:text-violet-700"
+              title="Abrir sessão"
+            >
+              ›
+            </button>
+
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => onEditBlock(firstBlock)}
+                className="text-[10px] font-medium text-violet-700 hover:underline"
+              >
+                Editar
+              </button>
+
+              <button
+                onClick={() => onDeleteBlock(firstBlock.id)}
+                className="text-[10px] font-medium text-rose-700 hover:underline"
+              >
+                Excluir
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
 function ChronologicalTimelineView({
   timelineData,
-  selectedBlock,
   onOpenBlock,
   onDeleteBlock,
   onEditBlock,
 }) {
   const years = getAvailableYears(timelineData)
-  const [selectedYear, setSelectedYear] = useState(years[0])
+  const [selectedYear, setSelectedYear] = useState(years[0] || "")
   const [selectedMonth, setSelectedMonth] = useState("MAR")
 
   const yearGroup = getYearGroup(timelineData, selectedYear)
-  const selectedMonthGroup = getMonthGroup(yearGroup, selectedMonth)
-  const monthBlocks = selectedMonthGroup?.blocks || []
-  const sessions = groupBlocksIntoSessions(monthBlocks)
+  const sessions = getMonthSessions(yearGroup, selectedMonth)
   const selectedYearIndex = years.findIndex((year) => year === selectedYear)
 
   function handlePreviousYear() {
@@ -319,7 +335,7 @@ function ChronologicalTimelineView({
   }
 
   function handleNextYear() {
-    if (selectedYearIndex === 0) return
+    if (selectedYearIndex <= 0) return
 
     setSelectedYear(years[selectedYearIndex - 1])
     setSelectedMonth("JAN")
@@ -336,7 +352,7 @@ function ChronologicalTimelineView({
         </button>
 
         <button className="h-11 rounded-xl border border-slate-200 px-12 text-lg font-bold text-slate-900">
-          {selectedYear}
+          {selectedYear || "Sem ano"}
         </button>
 
         <button
@@ -350,13 +366,13 @@ function ChronologicalTimelineView({
       <div className="mt-4 grid grid-cols-12 rounded-2xl border border-slate-200 bg-white">
         {monthLabels.map((month) => {
           const isActive = selectedMonth === month
-          const count = getMonthCount(yearGroup, month)
+          const count = getMonthSessions(yearGroup, month).length
 
           return (
             <button
               key={month}
               onClick={() => setSelectedMonth(month)}
-              className={`relative px-3 py-4 text-sm transition ${
+              className={`px-3 py-4 text-sm transition ${
                 isActive
                   ? "bg-violet-700 text-white"
                   : "text-slate-600 hover:bg-violet-50 hover:text-violet-800"
@@ -479,6 +495,10 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
 
   const blocksById = useMemo(() => {
     return allBlocks.reduce((accumulator, block) => {
+      if (!block?.id) {
+        return accumulator
+      }
+
       accumulator[block.id] = block
       return accumulator
     }, {})
@@ -504,7 +524,9 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-6">
         <div>
-         <h3 className="text-xl font-bold text-slate-900">Sessões do paciente</h3>
+          <h3 className="text-xl font-bold text-slate-900">
+            Sessões do paciente
+          </h3>
 
           <p className="mt-1 text-sm text-slate-500">
             {currentMode.description}
@@ -535,7 +557,6 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
       {selectedMode === "chronological" && (
         <ChronologicalTimelineView
           timelineData={timelineData}
-          selectedBlock={selectedBlock}
           onOpenBlock={handleOpenBlock}
           onDeleteBlock={onDeleteBlock}
           onEditBlock={onEditBlock}
