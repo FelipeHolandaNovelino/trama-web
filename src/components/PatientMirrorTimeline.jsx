@@ -1,3 +1,6 @@
+import { useState } from "react"
+import { TimelineBlockModal } from "./TimelineBlockModal"
+
 const colorByType = {
   "Marco positivo": "border-emerald-200 bg-emerald-50",
   "Evento traumático": "border-rose-200 bg-rose-50",
@@ -90,7 +93,59 @@ function getSortedYearEntries(groupedBlocks) {
   })
 }
 
+function MirrorBlockCard({ block, onOpenBlock }) {
+  return (
+    <button
+      onClick={() => onOpenBlock(block)}
+      className={`w-full rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        colorByType[block.type] || "border-slate-200 bg-slate-50"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold text-slate-500">
+            {block.type} • {block.eventDate}
+          </p>
+
+          <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
+        </div>
+
+        <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700">
+          {block.intensity}/10
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(block.emotions || []).slice(0, 3).map((emotion) => (
+          <span
+            key={emotion}
+            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+          >
+            {emotion}
+          </span>
+        ))}
+
+        {(block.people || []).slice(0, 2).map((person) => (
+          <span
+            key={person}
+            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+          >
+            {person}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <span>Relatado na sessão: {block.sessionDate}</span>
+        <span className="font-medium text-violet-700">Abrir bloco</span>
+      </div>
+    </button>
+  )
+}
+
 export function PatientMirrorTimeline({ timelineData }) {
+  const [selectedBlock, setSelectedBlock] = useState(null)
+
   const allBlocks = sortBlocksByEventDate(getAllBlocks(timelineData))
   const groupedBlocks = groupBlocksByEventYear(allBlocks)
   const yearEntries = getSortedYearEntries(groupedBlocks)
@@ -128,73 +183,21 @@ export function PatientMirrorTimeline({ timelineData }) {
 
             <div className="space-y-3 border-l-2 border-violet-100 pl-5">
               {blocks.map((block) => (
-                <article
+                <MirrorBlockCard
                   key={block.id}
-                  className={`rounded-2xl border p-4 ${
-                    colorByType[block.type] || "border-slate-200 bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500">
-                        {block.type} • acontecimento em {block.eventDate}
-                      </p>
-
-                      <h4 className="mt-1 font-semibold text-slate-900">
-                        {block.title}
-                      </h4>
-                    </div>
-
-                    <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700">
-                      {block.intensity}/10
-                    </span>
-                  </div>
-
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                    {block.text}
-                  </p>
-
-                  <div className="mt-3 grid gap-3 text-xs text-slate-500 md:grid-cols-2">
-                    <p>
-                      Relatado na sessão:{" "}
-                      <span className="font-medium text-slate-700">
-                        {block.sessionDate}
-                      </span>
-                    </p>
-
-                    <p>
-                      Pessoas:{" "}
-                      <span className="font-medium text-slate-700">
-                        {(block.people || []).join(", ") || "não informado"}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(block.emotions || []).slice(0, 4).map((emotion) => (
-                      <span
-                        key={emotion}
-                        className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
-                      >
-                        {emotion}
-                      </span>
-                    ))}
-
-                    {(block.tags || []).slice(0, 4).map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
+                  block={block}
+                  onOpenBlock={setSelectedBlock}
+                />
               ))}
             </div>
           </div>
         ))}
       </div>
+
+      <TimelineBlockModal
+        block={selectedBlock}
+        onClose={() => setSelectedBlock(null)}
+      />
     </section>
   )
 }
