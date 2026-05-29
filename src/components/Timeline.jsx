@@ -6,7 +6,7 @@ const timelineModes = [
   {
     id: "chronological",
     label: "Cronológica",
-    description: "História emocional organizada por ano, mês e sessões",
+    description: "Histórico clínico organizado por ano, mês, sessões e blocos",
   },
   {
     id: "emotional",
@@ -504,7 +504,7 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-6">
         <div>
-          <h3 className="text-xl font-bold text-slate-900">Linha do tempo</h3>
+         <h3 className="text-xl font-bold text-slate-900">Sessões do paciente</h3>
 
           <p className="mt-1 text-sm text-slate-500">
             {currentMode.description}
