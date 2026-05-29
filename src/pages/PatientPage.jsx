@@ -5,6 +5,7 @@ import { PatientHeader } from "../components/PatientHeader"
 import { Timeline } from "../components/Timeline"
 import { RightPanel } from "../components/RightPanel"
 import { AddSessionModal } from "../components/AddSessionModal"
+import { PatientMirrorTimeline } from "../components/PatientMirrorTimeline"
 
 const STORAGE_KEY = "trama_timeline_data"
 
@@ -258,6 +259,9 @@ export function PatientPage() {
 
         <RightPanel patient={patient} />
       </div>
+      <div className="mt-6">
+  <PatientMirrorTimeline timelineData={timelineData} />
+</div>
 
       <AddSessionModal
         isOpen={isAddSessionModalOpen}
