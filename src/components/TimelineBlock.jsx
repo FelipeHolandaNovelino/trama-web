@@ -25,65 +25,74 @@ export function TimelineBlock({
   return (
     <div
       onClick={() => setIsOpen(!isOpen)}
-      className={`w-full cursor-pointer rounded-2xl border p-4 text-left transition hover:shadow-md ${
+      className={`w-full cursor-pointer rounded-xl border p-3 text-left transition hover:shadow-md ${
         colorByType[block.type] || "bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold text-slate-500">{block.type}</p>
-          <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
-          <p className="mt-1 text-xs text-slate-500">{block.date}</p>
-        </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold text-slate-500">
+              {block.type}
+            </p>
 
-        <div className="flex flex-col items-end gap-2">
-          <span className="rounded-full bg-white/70 px-2 py-1 text-xs text-slate-700">
-            Intensidade {block.intensity}/10
-          </span>
+            <span className="text-[11px] text-slate-400">•</span>
 
-          <div className="flex gap-2">
-            <button
-              onClick={(event) => {
-                event.stopPropagation()
-                onEditBlock(block)
-              }}
-              className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100"
-            >
-              Editar
-            </button>
-
-            <button
-              onClick={(event) => {
-                event.stopPropagation()
-                onDeleteBlock(block.id)
-              }}
-              className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
-            >
-              Excluir
-            </button>
+            <p className="text-[11px] text-slate-500">{block.date}</p>
           </div>
+
+          <h4 className="mt-1 text-sm font-semibold leading-snug text-slate-900">
+            {block.title}
+          </h4>
         </div>
+
+        <span className="shrink-0 rounded-full bg-white/70 px-2 py-1 text-[11px] text-slate-700">
+          {block.intensity}/10
+        </span>
       </div>
 
-     
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {block.emotions.map((emotion) => (
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {block.emotions.slice(0, 3).map((emotion) => (
           <span
             key={emotion}
-            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+            className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700"
           >
-            emoção: {emotion}
+            {emotion}
           </span>
         ))}
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            onEditBlock(block)
+          }}
+          className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-violet-700 hover:bg-violet-100"
+        >
+          Editar
+        </button>
+
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            onDeleteBlock(block.id)
+          }}
+          className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-100"
+        >
+          Excluir
+        </button>
       </div>
 
       {isOpen && (
         <div className="mt-4 space-y-4 border-t border-white/70 pt-4">
           <div>
-  <p className="text-xs font-semibold text-slate-500">Bloco narrativo</p>
-  <p className="mt-2 text-sm text-slate-600">{block.text}</p>
-</div>
+            <p className="text-xs font-semibold text-slate-500">
+              Bloco narrativo
+            </p>
+            <p className="mt-2 text-sm text-slate-600">{block.text}</p>
+          </div>
+
           <div>
             <p className="text-xs font-semibold text-slate-500">
               Pessoas relacionadas
