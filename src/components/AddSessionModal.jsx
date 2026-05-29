@@ -6,7 +6,6 @@ import {
   availableTags,
 } from "../data/sessionOptions"
 
-
 function toggleItem(list, item) {
   if (list.includes(item)) {
     return list.filter((currentItem) => currentItem !== item)
@@ -34,6 +33,7 @@ export function AddSessionModal({
   initialBlock = null,
 }) {
   const [sessionDate, setSessionDate] = useState("")
+  const [eventDate, setEventDate] = useState("")
   const [blockType, setBlockType] = useState("Evento")
   const [blockTitle, setBlockTitle] = useState("")
   const [narrativeText, setNarrativeText] = useState("")
@@ -55,7 +55,8 @@ export function AddSessionModal({
 
     const firstConnection = initialBlock.connections?.[0]
 
-    setSessionDate(formatDateToInput(initialBlock.date))
+    setSessionDate(formatDateToInput(initialBlock.sessionDate || initialBlock.date))
+    setEventDate(formatDateToInput(initialBlock.eventDate || initialBlock.date))
     setBlockType(initialBlock.type)
     setBlockTitle(initialBlock.title)
     setNarrativeText(initialBlock.text)
@@ -80,6 +81,7 @@ export function AddSessionModal({
 
   function resetForm() {
     setSessionDate("")
+    setEventDate("")
     setBlockType("Evento")
     setBlockTitle("")
     setNarrativeText("")
@@ -98,8 +100,8 @@ export function AddSessionModal({
   }
 
   function handleSaveBlock() {
-    if (!sessionDate || !blockTitle.trim() || !narrativeText.trim()) {
-      alert("Preencha a data, o título e o texto do bloco narrativo.")
+    if (!sessionDate || !eventDate || !blockTitle.trim() || !narrativeText.trim()) {
+      alert("Preencha a data da sessão, a data do acontecimento, o título e o texto do bloco.")
       return
     }
 
@@ -119,7 +121,9 @@ export function AddSessionModal({
       id: initialBlock?.id || `block-${Date.now()}`,
       type: blockType,
       title: blockTitle,
-      date: sessionDate,
+      sessionDate,
+      eventDate,
+      date: eventDate,
       text: narrativeText,
       emotions: selectedEmotions,
       people: selectedPeople,
@@ -155,8 +159,8 @@ export function AddSessionModal({
             </h2>
 
             <p className="mt-2 text-sm text-slate-500">
-              Crie ou atualize blocos narrativos que alimentam a timeline, os
-              padrões emocionais e as relações importantes.
+              A sessão registra quando o paciente contou algo. O acontecimento
+              registra quando aquilo ocorreu na vida dele.
             </p>
           </div>
 
@@ -180,8 +184,31 @@ export function AddSessionModal({
               onChange={(event) => setSessionDate(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
             />
+
+            <p className="text-xs text-slate-500">
+              Quando o paciente relatou isso.
+            </p>
           </label>
 
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-slate-700">
+              Data do acontecimento
+            </span>
+
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(event) => setEventDate(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+            />
+
+            <p className="text-xs text-slate-500">
+              Quando isso aconteceu na vida do paciente.
+            </p>
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-medium text-slate-700">
               Tipo do bloco
@@ -198,6 +225,27 @@ export function AddSessionModal({
               <option>Evento traumático</option>
               <option>Observação clínica</option>
             </select>
+          </label>
+
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-slate-700">
+              Intensidade emocional
+            </span>
+
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 px-4 py-3">
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={intensity}
+                onChange={(event) => setIntensity(Number(event.target.value))}
+                className="w-full"
+              />
+
+              <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800">
+                {intensity}/10
+              </span>
+            </div>
           </label>
         </div>
 
@@ -309,27 +357,6 @@ export function AddSessionModal({
           </div>
         </div>
 
-        <label className="mt-4 block space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">
-              Intensidade emocional
-            </span>
-
-            <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800">
-              {intensity}/10
-            </span>
-          </div>
-
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={intensity}
-            onChange={(event) => setIntensity(Number(event.target.value))}
-            className="w-full"
-          />
-        </label>
-
         <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
           <p className="text-sm font-semibold text-violet-900">
             Conectar a evento anterior
@@ -349,7 +376,7 @@ export function AddSessionModal({
 
               {availableConnectionBlocks.map((block) => (
                 <option key={block.id} value={block.id}>
-                  {block.title} — {block.date}
+                  {block.title} — {block.eventDate || block.date}
                 </option>
               ))}
             </select>
@@ -395,7 +422,12 @@ export function AddSessionModal({
             Prévia do bloco
           </p>
 
-          <h3 className="mt-2 font-semibold text-slate-900">
+          <div className="mt-2 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
+            <p>Sessão: {sessionDate || "não definida"}</p>
+            <p>Acontecimento: {eventDate || "não definido"}</p>
+          </div>
+
+          <h3 className="mt-3 font-semibold text-slate-900">
             {blockTitle || "Título do bloco"}
           </h3>
 
