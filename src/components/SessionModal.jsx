@@ -101,6 +101,7 @@ export function SessionModal({
   onOpenBlock,
   onEditBlock,
   onDeleteBlock,
+  onAddBlockToSession,
 }) {
   if (!session) return null
 
@@ -138,12 +139,21 @@ export function SessionModal({
             )}
           </div>
 
-          <button
-            onClick={onClose}
-            className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            Fechar
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => onAddBlockToSession(session)}
+              className="rounded-full bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-900"
+            >
+              + Adicionar bloco
+            </button>
+
+            <button
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-3">

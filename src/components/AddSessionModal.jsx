@@ -361,12 +361,17 @@ export function AddSessionModal({
   onClose,
   onSaveBlock,
   onSaveSession,
+  onSaveBlockToExistingSession,
   existingBlocks = [],
   initialBlock = null,
+  targetSession = null,
 }) {
   const [sessionDate, setSessionDate] = useState("")
   const [sessionSummary, setSessionSummary] = useState("")
   const [blocks, setBlocks] = useState([createEmptyBlockDraft()])
+
+  const isEditingBlock = Boolean(initialBlock)
+  const isAddingBlockToExistingSession = Boolean(targetSession)
 
   useEffect(() => {
     if (!isOpen) return
@@ -378,8 +383,15 @@ export function AddSessionModal({
       return
     }
 
+    if (targetSession) {
+      setSessionDate(formatDateToInput(targetSession.date))
+      setSessionSummary(targetSession.summary || "")
+      setBlocks([createEmptyBlockDraft()])
+      return
+    }
+
     resetForm()
-  }, [isOpen, initialBlock])
+  }, [isOpen, initialBlock, targetSession])
 
   if (!isOpen) return null
 
@@ -464,8 +476,15 @@ export function AddSessionModal({
       return
     }
 
-    if (initialBlock) {
+    if (isEditingBlock) {
       onSaveBlock(prepareBlock(blocks[0]))
+      resetForm()
+      onClose()
+      return
+    }
+
+    if (isAddingBlockToExistingSession) {
+      onSaveBlockToExistingSession(targetSession.id, prepareBlock(blocks[0]))
       resetForm()
       onClose()
       return
@@ -495,19 +514,25 @@ export function AddSessionModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-6 py-6"
       onClick={handleClose}
     >
-  <div
-  className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] bg-slate-50 shadow-2xl"
-  onClick={(event) => event.stopPropagation()}
->
-  <div className="grid min-h-0 grid-cols-1 lg:grid-cols-[320px_1fr]">
+      <div
+        className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] bg-slate-50 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="grid min-h-0 grid-cols-1 lg:grid-cols-[320px_1fr]">
           <aside className="bg-gradient-to-b from-violet-800 to-slate-950 p-7 text-white">
             <p className="text-sm font-semibold text-violet-200">
-              {initialBlock ? "Editar bloco" : "Nova sessão"}
+              {isEditingBlock
+                ? "Editar bloco"
+                : isAddingBlockToExistingSession
+                ? "Adicionar bloco"
+                : "Nova sessão"}
             </p>
 
             <h2 className="mt-3 text-3xl font-bold leading-tight">
-              {initialBlock
+              {isEditingBlock
                 ? "Atualizar bloco narrativo"
+                : isAddingBlockToExistingSession
+                ? "Adicionar bloco nesta sessão"
                 : "Registrar sessão com múltiplos blocos"}
             </h2>
 
@@ -523,12 +548,13 @@ export function AddSessionModal({
 
               <div className="mt-4 space-y-3 text-sm">
                 <div className="rounded-2xl bg-white/10 p-3">
-                  1 sessão clínica
+                  Data da sessão: {sessionDate || "não definida"}
                 </div>
+
                 <div className="rounded-2xl bg-white/10 p-3">
-                  {blocks.length} bloco{blocks.length > 1 ? "s" : ""} narrativo
-                  {blocks.length > 1 ? "s" : ""}
+                  {blocks.length} bloco{blocks.length > 1 ? "s" : ""} em edição
                 </div>
+
                 <div className="rounded-2xl bg-white/10 p-3">
                   Espelho usa a data do acontecimento
                 </div>
@@ -536,16 +562,19 @@ export function AddSessionModal({
             </div>
           </aside>
 
-         <div className="min-h-0 p-6">
+          <div className="min-h-0 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-bold text-slate-900">
-                  {initialBlock ? "Editar bloco" : "Dados da sessão"}
+                  {isEditingBlock
+                    ? "Editar bloco"
+                    : isAddingBlockToExistingSession
+                    ? "Novo bloco para sessão existente"
+                    : "Dados da sessão"}
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Organize o atendimento e adicione quantos blocos forem
-                  necessários.
+                  Organize o atendimento e adicione os blocos narrativos.
                 </p>
               </div>
 
@@ -566,8 +595,13 @@ export function AddSessionModal({
                 <input
                   type="date"
                   value={sessionDate}
+                  disabled={isAddingBlockToExistingSession}
                   onChange={(event) => setSessionDate(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 ${
+                    isAddingBlockToExistingSession
+                      ? "cursor-not-allowed bg-slate-100 text-slate-500"
+                      : ""
+                  }`}
                 />
 
                 <p className="text-xs text-slate-500">
@@ -583,9 +617,14 @@ export function AddSessionModal({
                 <input
                   type="text"
                   value={sessionSummary}
+                  disabled={isAddingBlockToExistingSession}
                   onChange={(event) => setSessionSummary(event.target.value)}
                   placeholder="Ex: limites, sobrecarga e relação com o trabalho"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 ${
+                    isAddingBlockToExistingSession
+                      ? "cursor-not-allowed bg-slate-100 text-slate-500"
+                      : ""
+                  }`}
                 />
               </label>
             </div>
@@ -605,7 +644,7 @@ export function AddSessionModal({
               ))}
             </div>
 
-            {!initialBlock && (
+            {!isEditingBlock && !isAddingBlockToExistingSession && (
               <button
                 onClick={addBlock}
                 className="mt-5 w-full rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 hover:bg-violet-50"
@@ -626,7 +665,11 @@ export function AddSessionModal({
                 onClick={handleSave}
                 className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-medium text-white hover:bg-violet-900"
               >
-                {initialBlock ? "Salvar alterações" : "Salvar sessão"}
+                {isEditingBlock
+                  ? "Salvar alterações"
+                  : isAddingBlockToExistingSession
+                  ? "Adicionar bloco"
+                  : "Salvar sessão"}
               </button>
             </div>
           </div>

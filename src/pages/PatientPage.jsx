@@ -70,11 +70,13 @@ function getSessionsFromMonth(monthGroup) {
   const blocks = monthGroup.blocks || []
 
   const sessionsByDate = blocks.reduce((sessions, block) => {
-    if (!sessions[block.date]) {
-      sessions[block.date] = []
+    const date = block.sessionDate || block.date
+
+    if (!sessions[date]) {
+      sessions[date] = []
     }
 
-    sessions[block.date].push(block)
+    sessions[date].push(block)
 
     return sessions
   }, {})
@@ -91,7 +93,7 @@ function getSessionsFromMonth(monthGroup) {
 function getAllBlocksFromTimeline(timelineData) {
   return timelineData.flatMap((yearGroup) =>
     yearGroup.months.flatMap((monthGroup) =>
-      getSessionsFromMonth(monthGroup).flatMap((session) => session.blocks)
+      getSessionsFromMonth(monthGroup).flatMap((session) => session.blocks || [])
     )
   )
 }
@@ -139,6 +141,20 @@ function createSessionFromBlocks(sessionData) {
         date: formattedEventDate,
       }
     }),
+  }
+}
+
+function formatBlockForSession(blockData, sessionDate) {
+  const formattedSessionDate = formatDateToBrazilian(sessionDate)
+  const formattedEventDate = formatDateToBrazilian(
+    blockData.eventDate || blockData.date
+  )
+
+  return {
+    ...blockData,
+    sessionDate: formattedSessionDate,
+    eventDate: formattedEventDate,
+    date: formattedEventDate,
   }
 }
 
@@ -204,6 +220,32 @@ function addSessionToTimeline(currentTimeline, newSession) {
   })
 }
 
+function addBlockToExistingSession(currentTimeline, sessionId, blockData) {
+  return currentTimeline.map((yearGroup) => ({
+    ...yearGroup,
+    months: yearGroup.months.map((monthGroup) => {
+      const sessions = getSessionsFromMonth(monthGroup).map((session) => {
+        if (session.id !== sessionId) {
+          return session
+        }
+
+        const formattedBlock = formatBlockForSession(blockData, session.date)
+
+        return {
+          ...session,
+          blocks: [...(session.blocks || []), formattedBlock],
+        }
+      })
+
+      return {
+        ...monthGroup,
+        blocks: undefined,
+        sessions,
+      }
+    }),
+  }))
+}
+
 function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
   return currentTimeline
     .map((yearGroup) => {
@@ -211,7 +253,7 @@ function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
         .map((monthGroup) => {
           const sessions = getSessionsFromMonth(monthGroup)
             .map((session) => {
-              const blocks = session.blocks
+              const blocks = (session.blocks || [])
                 .filter((block) => block.id !== blockIdToRemove)
                 .map((block) => ({
                   ...block,
@@ -272,6 +314,7 @@ function getInitialTimeline() {
 export function PatientPage() {
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState(null)
+  const [targetSession, setTargetSession] = useState(null)
   const [timelineData, setTimelineData] = useState(getInitialTimeline)
 
   const existingBlocks = useMemo(() => {
@@ -284,16 +327,25 @@ export function PatientPage() {
 
   function handleOpenAddSession() {
     setEditingBlock(null)
+    setTargetSession(null)
     setIsAddSessionModalOpen(true)
   }
 
   function handleEditBlock(block) {
+    setTargetSession(null)
     setEditingBlock(block)
+    setIsAddSessionModalOpen(true)
+  }
+
+  function handleAddBlockToSession(session) {
+    setEditingBlock(null)
+    setTargetSession(session)
     setIsAddSessionModalOpen(true)
   }
 
   function handleCloseModal() {
     setEditingBlock(null)
+    setTargetSession(null)
     setIsAddSessionModalOpen(false)
   }
 
@@ -320,6 +372,14 @@ export function PatientPage() {
     setTimelineData((currentTimeline) =>
       addSessionToTimeline(currentTimeline, newSession)
     )
+  }
+
+  function handleSaveBlockToExistingSession(sessionId, blockData) {
+    setTimelineData((currentTimeline) =>
+      addBlockToExistingSession(currentTimeline, sessionId, blockData)
+    )
+
+    setTargetSession(null)
   }
 
   function handleDeleteBlock(blockId) {
@@ -361,6 +421,7 @@ export function PatientPage() {
           timelineData={timelineData}
           onDeleteBlock={handleDeleteBlock}
           onEditBlock={handleEditBlock}
+          onAddBlockToSession={handleAddBlockToSession}
         />
 
         <RightPanel patient={patient} timelineData={timelineData} />
@@ -375,8 +436,10 @@ export function PatientPage() {
         onClose={handleCloseModal}
         onSaveBlock={handleSaveBlock}
         onSaveSession={handleSaveSession}
+        onSaveBlockToExistingSession={handleSaveBlockToExistingSession}
         existingBlocks={existingBlocks}
         initialBlock={editingBlock}
+        targetSession={targetSession}
       />
     </main>
   )

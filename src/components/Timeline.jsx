@@ -454,7 +454,12 @@ function ChronologicalTimelineView({
   )
 }
 
-export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
+export function Timeline({
+  timelineData,
+  onDeleteBlock,
+  onEditBlock,
+  onAddBlockToSession,
+}) {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
   const [selectedMode, setSelectedMode] = useState("chronological")
@@ -498,6 +503,11 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
 
   function handleOpenSession(session) {
     setSelectedSession(session)
+  }
+
+  function handleAddBlockToSession(session) {
+    setSelectedSession(null)
+    onAddBlockToSession(session)
   }
 
   return (
@@ -566,6 +576,7 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
         onOpenBlock={handleOpenBlock}
         onEditBlock={onEditBlock}
         onDeleteBlock={onDeleteBlock}
+        onAddBlockToSession={handleAddBlockToSession}
       />
 
       <TimelineBlockModal
