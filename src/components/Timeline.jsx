@@ -6,23 +6,24 @@ import { SessionModal } from "./SessionModal"
 const timelineModes = [
   {
     id: "chronological",
-    label: "Cronológica",
+    label: "Sessões",
     description: "Histórico clínico organizado por ano, mês, sessões e blocos",
   },
   {
     id: "emotional",
-    label: "Emocional",
+    label: "Emoções",
     description: "Blocos agrupados pelas emoções recorrentes",
   },
   {
     id: "relational",
-    label: "Relacional",
+    label: "Relações",
     description: "Blocos agrupados pelas pessoas importantes",
   },
   {
     id: "mirror",
     label: "Espelho",
-    description: "Acontecimentos organizados pela data em que ocorreram na vida do paciente",
+    description:
+      "Acontecimentos organizados pela data em que ocorreram na vida do paciente",
   },
 ]
 
