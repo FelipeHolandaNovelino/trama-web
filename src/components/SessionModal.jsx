@@ -105,6 +105,7 @@ export function SessionModal({
   onDeleteBlock,
   onAddBlockToSession,
   onUpdateSession,
+  onDeleteSession,
 }) {
   const [isEditingSession, setIsEditingSession] = useState(false)
   const [sessionTitle, setSessionTitle] = useState("")
@@ -142,6 +143,10 @@ export function SessionModal({
     })
 
     setIsEditingSession(false)
+  }
+
+  function handleDeleteSession() {
+    onDeleteSession(session.id)
   }
 
   return (
@@ -242,6 +247,13 @@ export function SessionModal({
                   className="rounded-full bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-900"
                 >
                   + Adicionar bloco
+                </button>
+
+                <button
+                  onClick={handleDeleteSession}
+                  className="rounded-full bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                >
+                  Excluir sessão
                 </button>
               </>
             )}

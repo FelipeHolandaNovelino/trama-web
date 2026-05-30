@@ -311,6 +311,49 @@ function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
     .filter((yearGroup) => yearGroup.months.length > 0)
 }
 
+function removeSessionFromTimeline(currentTimeline, sessionIdToRemove) {
+  const blockIdsToRemove = currentTimeline.flatMap((yearGroup) =>
+    yearGroup.months.flatMap((monthGroup) =>
+      getSessionsFromMonth(monthGroup)
+        .filter((session) => session.id === sessionIdToRemove)
+        .flatMap((session) => session.blocks || [])
+        .map((block) => block.id)
+    )
+  )
+
+  return currentTimeline
+    .map((yearGroup) => {
+      const months = yearGroup.months
+        .map((monthGroup) => {
+          const sessions = getSessionsFromMonth(monthGroup)
+            .filter((session) => session.id !== sessionIdToRemove)
+            .map((session) => ({
+              ...session,
+              blocks: (session.blocks || []).map((block) => ({
+                ...block,
+                connections: (block.connections || []).filter(
+                  (connection) =>
+                    !blockIdsToRemove.includes(connection.targetBlockId)
+                ),
+              })),
+            }))
+
+          return {
+            ...monthGroup,
+            blocks: undefined,
+            sessions,
+          }
+        })
+        .filter((monthGroup) => getSessionsFromMonth(monthGroup).length > 0)
+
+      return {
+        ...yearGroup,
+        months,
+      }
+    })
+    .filter((yearGroup) => yearGroup.months.length > 0)
+}
+
 function updateBlockInTimeline(currentTimeline, updatedBlock) {
   const timelineWithoutOldBlock = removeBlockFromTimeline(
     currentTimeline,
@@ -423,6 +466,18 @@ export function PatientPage() {
     )
   }
 
+  function handleDeleteSession(sessionId) {
+    const confirmed = confirm(
+      "Tem certeza que deseja excluir esta sessão inteira? Todos os blocos desta sessão também serão apagados."
+    )
+
+    if (!confirmed) return
+
+    setTimelineData((currentTimeline) =>
+      removeSessionFromTimeline(currentTimeline, sessionId)
+    )
+  }
+
   function handleResetTimeline() {
     const confirmed = confirm(
       "Tem certeza que deseja restaurar a timeline inicial? Os blocos criados localmente serão apagados."
@@ -454,6 +509,7 @@ export function PatientPage() {
           onEditBlock={handleEditBlock}
           onAddBlockToSession={handleAddBlockToSession}
           onUpdateSession={handleUpdateSession}
+          onDeleteSession={handleDeleteSession}
         />
 
         <RightPanel patient={patient} timelineData={timelineData} />

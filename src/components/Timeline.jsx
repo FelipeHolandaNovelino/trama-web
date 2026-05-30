@@ -460,6 +460,7 @@ export function Timeline({
   onEditBlock,
   onAddBlockToSession,
   onUpdateSession,
+  onDeleteSession,
 }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
@@ -525,6 +526,11 @@ export function Timeline({
         summary: updatedSessionData.summary,
       }
     })
+  }
+
+  function handleDeleteSession(sessionId) {
+    onDeleteSession(sessionId)
+    setSelectedSession(null)
   }
 
   return (
@@ -595,6 +601,7 @@ export function Timeline({
         onDeleteBlock={onDeleteBlock}
         onAddBlockToSession={handleAddBlockToSession}
         onUpdateSession={handleUpdateSession}
+        onDeleteSession={handleDeleteSession}
       />
 
       <TimelineBlockModal
