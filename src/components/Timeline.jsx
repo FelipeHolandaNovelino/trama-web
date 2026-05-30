@@ -244,12 +244,7 @@ function MiniBlockCard({ block, onOpenBlock }) {
   )
 }
 
-function SessionRow({
-  session,
-  sessionNumber,
-  onOpenSession,
-  onOpenBlock,
-}) {
+function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
   return (
     <button
       onClick={() => onOpenSession(session)}
@@ -490,7 +485,11 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
   }, [allBlocks])
 
   function handleOpenConnectedBlock(blockId) {
-    setSelectedBlock(blocksById[blockId])
+    const connectedBlock = blocksById[blockId]
+
+    if (!connectedBlock) return
+
+    setSelectedBlock(connectedBlock)
   }
 
   function handleOpenBlock(block) {
@@ -572,6 +571,7 @@ export function Timeline({ timelineData, onDeleteBlock, onEditBlock }) {
       <TimelineBlockModal
         block={selectedBlock}
         onClose={() => setSelectedBlock(null)}
+        onOpenConnectedBlock={handleOpenConnectedBlock}
       />
     </section>
   )

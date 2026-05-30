@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { TimelineBlockModal } from "./TimelineBlockModal"
 
 const colorByType = {
@@ -35,17 +35,19 @@ function getSessionsFromMonth(monthGroup) {
 }
 
 function getAllBlocks(timelineData) {
-  return timelineData.flatMap((yearGroup) =>
-    yearGroup.months.flatMap((monthGroup) =>
-      getSessionsFromMonth(monthGroup).flatMap((session) =>
-        session.blocks.map((block) => ({
-          ...block,
-          sessionDate: block.sessionDate || session.date || block.date,
-          eventDate: block.eventDate || block.date,
-        }))
+  return timelineData
+    .flatMap((yearGroup) =>
+      yearGroup.months.flatMap((monthGroup) =>
+        getSessionsFromMonth(monthGroup).flatMap((session) =>
+          (session.blocks || []).map((block) => ({
+            ...block,
+            sessionDate: block.sessionDate || session.date || block.date,
+            eventDate: block.eventDate || block.date,
+          }))
+        )
       )
     )
-  )
+    .filter(Boolean)
 }
 
 function formatDateToComparable(dateString) {
@@ -146,9 +148,29 @@ function MirrorBlockCard({ block, onOpenBlock }) {
 export function PatientMirrorTimeline({ timelineData }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
 
-  const allBlocks = sortBlocksByEventDate(getAllBlocks(timelineData))
+  const allBlocks = useMemo(() => {
+    return sortBlocksByEventDate(getAllBlocks(timelineData))
+  }, [timelineData])
+
+  const blocksById = useMemo(() => {
+    return allBlocks.reduce((accumulator, block) => {
+      if (!block?.id) return accumulator
+
+      accumulator[block.id] = block
+      return accumulator
+    }, {})
+  }, [allBlocks])
+
   const groupedBlocks = groupBlocksByEventYear(allBlocks)
   const yearEntries = getSortedYearEntries(groupedBlocks)
+
+  function handleOpenConnectedBlock(blockId) {
+    const connectedBlock = blocksById[blockId]
+
+    if (!connectedBlock) return
+
+    setSelectedBlock(connectedBlock)
+  }
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -197,7 +219,8 @@ export function PatientMirrorTimeline({ timelineData }) {
       <TimelineBlockModal
         block={selectedBlock}
         onClose={() => setSelectedBlock(null)}
+        onOpenConnectedBlock={handleOpenConnectedBlock}
       />
     </section>
   )
-}
+} 

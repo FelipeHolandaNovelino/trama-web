@@ -12,8 +12,18 @@ const connectionColorByStrength = {
   forte: "bg-rose-100 text-rose-800",
 }
 
-export function TimelineBlockModal({ block, onClose }) {
+export function TimelineBlockModal({
+  block,
+  onClose,
+  onOpenConnectedBlock,
+}) {
   if (!block) return null
+
+  function handleOpenConnection(connection) {
+    if (!onOpenConnectedBlock) return
+
+    onOpenConnectedBlock(connection.targetBlockId)
+  }
 
   return (
     <div
@@ -169,9 +179,10 @@ export function TimelineBlockModal({ block, onClose }) {
             {(block.connections || []).length > 0 ? (
               <div className="mt-4 space-y-3">
                 {block.connections.map((connection) => (
-                  <div
+                  <button
                     key={connection.targetBlockId}
-                    className="rounded-2xl bg-white p-4 text-sm text-slate-700"
+                    onClick={() => handleOpenConnection(connection)}
+                    className="w-full rounded-2xl bg-white p-4 text-left text-sm text-slate-700 transition hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -181,6 +192,10 @@ export function TimelineBlockModal({ block, onClose }) {
 
                         <p className="mt-2 text-slate-600">
                           {connection.reason}
+                        </p>
+
+                        <p className="mt-3 text-xs font-medium text-violet-700">
+                          Clique para abrir o bloco conectado
                         </p>
                       </div>
 
@@ -193,7 +208,7 @@ export function TimelineBlockModal({ block, onClose }) {
                         {connection.strength}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
