@@ -73,6 +73,20 @@ const mirrorColorByType = {
   "Observação clínica": "border-blue-200 bg-blue-50",
 }
 
+const mirrorConnectionColorByStrength = {
+  leve: "border-slate-200 bg-slate-50 text-slate-700",
+  moderada: "border-amber-200 bg-amber-50 text-amber-800",
+  forte: "border-emerald-200 bg-emerald-50 text-emerald-800",
+}
+
+const dotColorByType = {
+  "Marco positivo": "bg-emerald-400",
+  "Evento traumático": "bg-rose-400",
+  Insight: "bg-amber-400",
+  Evento: "bg-violet-400",
+  "Observação clínica": "bg-blue-400",
+}
+
 function getSessionsFromMonth(monthGroup) {
   if (!monthGroup) return []
 
@@ -117,6 +131,12 @@ function getAllBlocks(timelineData) {
       )
     )
     .filter(Boolean)
+}
+
+function getAllSessions(timelineData) {
+  return timelineData.flatMap((yearGroup) =>
+    yearGroup.months.flatMap((monthGroup) => getSessionsFromMonth(monthGroup))
+  )
 }
 
 function groupBlocksByArrayField(blocks, fieldName) {
@@ -198,6 +218,13 @@ function getYearFromEventDate(dateString) {
   return comparableDate.split("-")[0]
 }
 
+function getMonthFromEventDate(dateString) {
+  const comparableDate = formatDateToComparable(dateString)
+  const [, month] = comparableDate.split("-")
+
+  return monthLabels[Number(month) - 1] || ""
+}
+
 function sortBlocksByEventDate(blocks) {
   return [...blocks].sort((firstBlock, secondBlock) => {
     const firstDate = formatDateToComparable(firstBlock.eventDate)
@@ -221,10 +248,67 @@ function groupBlocksByEventYear(blocks) {
   }, {})
 }
 
-function getSortedYearEntries(groupedBlocks) {
-  return Object.entries(groupedBlocks).sort(([firstYear], [secondYear]) => {
-    return Number(firstYear) - Number(secondYear)
+function getTotalBlocksFromSessions(sessions) {
+  return sessions.reduce((total, session) => {
+    return total + (session.blocks || []).length
+  }, 0)
+}
+
+function getMostCommonBlockTypesFromSessions(sessions) {
+  const blocks = sessions.flatMap((session) => session.blocks || [])
+
+  return blocks.slice(0, 5).map((block) => block.type)
+}
+
+function getBlocksById(blocks) {
+  return blocks.reduce((accumulator, block) => {
+    if (!block?.id) return accumulator
+
+    accumulator[block.id] = block
+    return accumulator
+  }, {})
+}
+
+function getMirrorMainBlocks(blocks) {
+  const targetIds = new Set(
+    blocks.flatMap((block) =>
+      (block.connections || []).map((connection) => connection.targetBlockId)
+    )
+  )
+
+  return sortBlocksByEventDate(blocks).filter((block) => !targetIds.has(block.id))
+}
+
+function getMirrorConnectedBlocks(block, blocksById) {
+  return (block.connections || [])
+    .map((connection) => {
+      const connectedBlock = blocksById[connection.targetBlockId]
+
+      if (!connectedBlock) return null
+
+      return {
+        ...connectedBlock,
+        connectionReason: connection.reason,
+        connectionStrength: connection.strength,
+      }
+    })
+    .filter(Boolean)
+}
+
+function getUniquePeopleCount(blocks) {
+  const people = new Set()
+
+  blocks.forEach((block) => {
+    ;(block.people || []).forEach((person) => people.add(person))
   })
+
+  return people.size
+}
+
+function getConnectionsCount(blocks) {
+  return blocks.reduce((total, block) => {
+    return total + (block.connections || []).length
+  }, 0)
 }
 
 function GroupedTimelineView({
@@ -307,6 +391,76 @@ function MiniBlockCard({ block, onOpenBlock }) {
   )
 }
 
+function MonthCalendarCard({ month, sessions, isActive, onClick }) {
+  const totalBlocks = getTotalBlocksFromSessions(sessions)
+  const blockTypes = getMostCommonBlockTypesFromSessions(sessions)
+
+  return (
+    <button
+      onClick={onClick}
+      className={`min-h-[150px] rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        isActive
+          ? "border-violet-300 bg-violet-50 shadow-sm"
+          : "border-slate-200 bg-white hover:bg-slate-50"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p
+            className={`text-sm font-bold ${
+              isActive ? "text-violet-800" : "text-slate-800"
+            }`}
+          >
+            {month}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-500">{monthNames[month]}</p>
+        </div>
+
+        {sessions.length > 0 && (
+          <span
+            className={`rounded-full px-2 py-1 text-xs font-semibold ${
+              isActive
+                ? "bg-violet-700 text-white"
+                : "bg-violet-100 text-violet-800"
+            }`}
+          >
+            {sessions.length}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5">
+        {sessions.length === 0 ? (
+          <p className="text-xs text-slate-400">Sem sessões</p>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-slate-600">
+              {sessions.length} sessão{sessions.length > 1 ? "es" : ""}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              {totalBlocks} bloco{totalBlocks > 1 ? "s" : ""}
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {blockTypes.map((type, index) => (
+                <span
+                  key={`${type}-${index}`}
+                  className={`h-2 w-2 rounded-full ${
+                    dotColorByType[type] || "bg-slate-300"
+                  }`}
+                  title={type}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </button>
+  )
+}
+
 function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
   return (
     <button
@@ -357,279 +511,461 @@ function ChronologicalTimelineView({
   const years = getAvailableYears(timelineData)
   const [selectedYear, setSelectedYear] = useState(years[0] || "")
   const [selectedMonth, setSelectedMonth] = useState("MAR")
+  const [isYearMenuOpen, setIsYearMenuOpen] = useState(false)
 
   const yearGroup = getYearGroup(timelineData, selectedYear)
   const sessions = getMonthSessions(yearGroup, selectedMonth)
-  const selectedYearIndex = years.findIndex((year) => year === selectedYear)
 
-  function handlePreviousYear() {
-    if (selectedYearIndex === years.length - 1) return
+  const totalSessionsInYear = monthLabels.reduce((total, month) => {
+    return total + getMonthSessions(yearGroup, month).length
+  }, 0)
 
-    setSelectedYear(years[selectedYearIndex + 1])
+  const totalBlocksInAllYears = getAllBlocks(timelineData).length
+  const totalSessionsInAllYears = getAllSessions(timelineData).length
+
+  function handleSelectYear(year) {
+    setSelectedYear(year)
     setSelectedMonth("JAN")
-  }
-
-  function handleNextYear() {
-    if (selectedYearIndex <= 0) return
-
-    setSelectedYear(years[selectedYearIndex - 1])
-    setSelectedMonth("JAN")
+    setIsYearMenuOpen(false)
   }
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handlePreviousYear}
-          className="h-11 w-11 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-        >
-          ‹
-        </button>
+    <div className="mt-6 space-y-5">
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-slate-500">
+              Calendário clínico
+            </p>
 
-        <button className="h-11 rounded-xl border border-slate-200 px-12 text-lg font-bold text-slate-900">
-          {selectedYear || "Sem ano"}
-        </button>
+            <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              Sessões por mês
+            </h3>
 
-        <button
-          onClick={handleNextYear}
-          className="h-11 w-11 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-        >
-          ›
-        </button>
-      </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Clique em um mês para ver as sessões registradas.
+            </p>
+          </div>
 
-      <div className="mt-4 grid grid-cols-12 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        {monthLabels.map((month) => {
-          const isActive = selectedMonth === month
-          const count = getMonthSessions(yearGroup, month).length
-
-          return (
+          <div className="relative">
             <button
-              key={month}
-              onClick={() => setSelectedMonth(month)}
-              className={`px-3 py-4 text-sm transition ${
-                isActive
-                  ? "bg-violet-700 text-white"
-                  : "text-slate-600 hover:bg-violet-50 hover:text-violet-800"
-              }`}
+              onClick={() => setIsYearMenuOpen(!isYearMenuOpen)}
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-900 shadow-sm hover:bg-slate-50"
             >
-              <span className="font-medium">{month}</span>
-
-              {count > 0 && (
-                <span
-                  className={`ml-1 text-xs ${
-                    isActive ? "text-violet-100" : "text-slate-400"
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
+              {selectedYear || "Sem ano"}
+              <span className="text-sm text-slate-400">▾</span>
             </button>
-          )
-        })}
+
+            {isYearMenuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                {years.map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => handleSelectYear(year)}
+                    className={`w-full px-4 py-3 text-left text-sm transition ${
+                      year === selectedYear
+                        ? "bg-violet-50 font-semibold text-violet-800"
+                        : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+          {monthLabels.map((month) => {
+            const monthSessions = getMonthSessions(yearGroup, month)
+
+            return (
+              <MonthCalendarCard
+                key={month}
+                month={month}
+                sessions={monthSessions}
+                isActive={selectedMonth === month}
+                onClick={() => setSelectedMonth(month)}
+              />
+            )
+          })}
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Sessões no ano
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {totalSessionsInYear}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Sessões totais
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {totalSessionsInAllYears}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Blocos de eventos totais
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {totalBlocksInAllYears}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">Mês aberto</p>
+
+            <p className="mt-1 text-lg font-bold text-violet-800">
+              {monthNames[selectedMonth]}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-[190px_1fr] overflow-hidden rounded-3xl border border-slate-200 bg-white">
-        <aside className="border-r border-slate-200 p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-2xl font-bold text-violet-800">
-                {monthNames[selectedMonth]}
-              </h3>
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">
+              Sessões de {monthNames[selectedMonth].toLowerCase()}
+            </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
-                {sessions.length} sessão{sessions.length !== 1 ? "es" : ""}
-              </p>
-            </div>
-
-            <span className="mt-1 h-2 w-2 rounded-full bg-violet-700" />
+            <p className="text-sm text-slate-500">
+              {selectedYear} • {sessions.length} sessão
+              {sessions.length !== 1 ? "es" : ""} encontrada
+              {sessions.length !== 1 ? "s" : ""}
+            </p>
           </div>
-
-          <p className="mt-7 text-sm leading-relaxed text-slate-600">
-            Clique em uma sessão para abrir todos os blocos daquele atendimento.
-          </p>
-
-          <div className="mt-8 h-20 rounded-2xl bg-violet-50 p-3">
-            <div className="flex h-full items-end gap-1">
-              {[35, 48, 42, 68, 56, 82].map((height, index) => (
-                <span
-                  key={index}
-                  style={{ height: `${height}%` }}
-                  className="w-2 rounded-full bg-violet-400"
-                />
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        <div>
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Sessões de {monthNames[selectedMonth].toLowerCase()}
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                {selectedYear} • blocos de eventos registrados por sessão
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600">
-                Ver em calendário
-              </button>
-
-              <button className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600">
-                Mais recentes
-              </button>
-            </div>
-          </div>
-
-          {sessions.length === 0 ? (
-            <div className="flex min-h-[280px] items-center justify-center p-8 text-center">
-              <div>
-                <p className="text-lg font-semibold text-slate-800">
-                  Nenhuma sessão registrada neste mês
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500">
-                  Quando houver sessões em {monthNames[selectedMonth]}, elas
-                  aparecerão aqui.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {sessions.map((session, index) => (
-                <SessionRow
-                  key={session.id}
-                  session={session}
-                  sessionNumber={sessions.length - index}
-                  onOpenSession={onOpenSession}
-                  onOpenBlock={onOpenBlock}
-                />
-              ))}
-            </div>
-          )}
         </div>
+
+        {sessions.length === 0 ? (
+          <div className="flex min-h-[240px] items-center justify-center p-8 text-center">
+            <div>
+              <p className="text-lg font-semibold text-slate-800">
+                Nenhuma sessão registrada neste mês
+              </p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Quando houver sessões em {monthNames[selectedMonth]}, elas
+                aparecerão aqui.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {sessions.map((session, index) => (
+              <SessionRow
+                key={session.id}
+                session={session}
+                sessionNumber={sessions.length - index}
+                onOpenSession={onOpenSession}
+                onOpenBlock={onOpenBlock}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function MirrorBlockCard({ block, onOpenBlock }) {
-  const connectionsCount = block.connections?.length || 0
-  const hasConnections = connectionsCount > 0
-
+function MirrorConnectedCard({ block, onOpenBlock }) {
   return (
     <button
       onClick={() => onOpenBlock(block)}
-      className={`w-full rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
-        mirrorColorByType[block.type] || "border-slate-200 bg-slate-50"
+      className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        mirrorConnectionColorByStrength[block.connectionStrength] ||
+        "border-slate-200 bg-slate-50 text-slate-700"
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold text-slate-500">
-              {block.type} • {block.eventDate}
-            </p>
+      <p className="text-xs font-semibold text-slate-500">
+        {block.eventDate || block.date}
+      </p>
 
-            {hasConnections && (
-              <span className="rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                {connectionsCount} conexão
-                {connectionsCount > 1 ? "ões" : ""}
-              </span>
-            )}
-          </div>
+      <h5 className="mt-1 text-sm font-bold text-slate-900">{block.title}</h5>
 
-          <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
-        </div>
+      {block.connectionReason && (
+        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">
+          {block.connectionReason}
+        </p>
+      )}
 
-        <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700">
-          {block.intensity}/10
-        </span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {(block.emotions || []).slice(0, 3).map((emotion) => (
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {(block.emotions || []).slice(0, 2).map((emotion) => (
           <span
             key={emotion}
-            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+            className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] text-slate-700"
           >
             {emotion}
           </span>
         ))}
-
-        {(block.people || []).slice(0, 2).map((person) => (
-          <span
-            key={person}
-            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
-          >
-            {person}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-        <span>Relatado na sessão: {block.sessionDate}</span>
-        <span className="font-medium text-violet-700">Abrir bloco</span>
       </div>
     </button>
   )
 }
 
-function MirrorTimelineView({ blocks, onOpenBlock }) {
-  const sortedBlocks = sortBlocksByEventDate(blocks)
-  const groupedBlocks = groupBlocksByEventYear(sortedBlocks)
-  const yearEntries = getSortedYearEntries(groupedBlocks)
+function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
+  const year = getYearFromEventDate(block.eventDate)
+  const month = getMonthFromEventDate(block.eventDate)
 
   return (
-    <div className="mt-8">
-      <div className="mb-6 rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h3 className="text-xl font-bold text-violet-950">
-              Espelho do paciente
-            </h3>
+    <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+      <button
+        onClick={() => onOpenBlock(block)}
+        className={`relative rounded-3xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+          mirrorColorByType[block.type] || "border-slate-200 bg-white"
+        }`}
+      >
+        <div className="absolute -left-[29px] top-7 h-4 w-4 rounded-full border-4 border-white bg-violet-700 shadow" />
 
-            <p className="mt-1 text-sm text-violet-700">
-              Linha do tempo contínua da vida emocional, organizada pela data do
-              acontecimento — não pela data da sessão.
+        <div className="grid gap-4 md:grid-cols-[90px_1fr_180px]">
+          <div className="border-r border-slate-200 pr-4">
+            <p className="text-2xl font-bold text-slate-900">
+              {getDayFromDate(block.eventDate)}
             </p>
+
+            <p className="text-xs font-semibold text-violet-700">{month}</p>
+
+            <p className="mt-1 text-xs text-slate-400">{year}</p>
           </div>
 
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-violet-700">
-            {sortedBlocks.length} acontecimento
-            {sortedBlocks.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500">{block.type}</p>
 
-      <div className="space-y-8">
-        {yearEntries.map(([year, yearBlocks]) => (
-          <div key={year} className="grid grid-cols-[90px_1fr] gap-5">
-            <div>
-              <div className="sticky top-6 rounded-2xl bg-violet-700 px-4 py-3 text-center text-white">
-                <p className="text-lg font-bold">{year}</p>
-                <p className="text-[11px] text-violet-100">
-                  {yearBlocks.length} evento
-                  {yearBlocks.length !== 1 ? "s" : ""}
-                </p>
-              </div>
+            <h4 className="mt-1 text-lg font-bold text-slate-900">
+              {block.title}
+            </h4>
+
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">
+              {block.text}
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(block.emotions || []).slice(0, 4).map((emotion) => (
+                <span
+                  key={emotion}
+                  className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+                >
+                  {emotion}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-l border-slate-200 pl-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Pessoas envolvidas
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {(block.people || []).slice(0, 3).map((person) => (
+                <span
+                  key={person}
+                  className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700"
+                >
+                  {person}
+                </span>
+              ))}
+
+              {(block.people || []).length > 3 && (
+                <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700">
+                  +{block.people.length - 3}
+                </span>
+              )}
             </div>
 
-            <div className="space-y-3 border-l-2 border-violet-100 pl-5">
-              {yearBlocks.map((block) => (
-                <MirrorBlockCard
-                  key={block.id}
-                  block={block}
+            <p className="mt-4 text-xs font-semibold text-slate-500">
+              Intensidade
+            </p>
+
+            <div className="mt-2 flex items-center gap-1.5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-2 w-2 rounded-full ${
+                    index < Math.ceil((block.intensity || 0) / 2)
+                      ? "bg-violet-700"
+                      : "bg-slate-200"
+                  }`}
+                />
+              ))}
+
+              <span className="ml-2 text-xs text-slate-500">
+                {block.intensity}/10
+              </span>
+            </div>
+
+            <p className="mt-4 text-xs font-medium text-violet-700">
+              Abrir acontecimento
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <div className="relative">
+        {connectedBlocks.length > 0 && (
+          <>
+            <div className="absolute -left-4 top-1/2 hidden h-px w-4 border-t border-dashed border-violet-300 lg:block" />
+
+            <div className="space-y-3">
+              {connectedBlocks.map((connectedBlock) => (
+                <MirrorConnectedCard
+                  key={connectedBlock.id}
+                  block={connectedBlock}
                   onOpenBlock={onOpenBlock}
                 />
               ))}
             </div>
+          </>
+        )}
+
+        {connectedBlocks.length === 0 && (
+          <div className="hidden h-full items-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-400 lg:flex">
+            Sem desdobramentos conectados.
           </div>
-        ))}
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MirrorTimelineView({ blocks, onOpenBlock }) {
+  const [showOnlyConnected, setShowOnlyConnected] = useState(false)
+
+  const blocksById = getBlocksById(blocks)
+  const sortedBlocks = sortBlocksByEventDate(blocks)
+  const mainBlocks = getMirrorMainBlocks(sortedBlocks)
+  const visibleBlocks = showOnlyConnected
+    ? mainBlocks.filter((block) => (block.connections || []).length > 0)
+    : mainBlocks
+
+  const totalPeople = getUniquePeopleCount(blocks)
+  const totalConnections = getConnectionsCount(blocks)
+  const firstYear = sortedBlocks[0]
+    ? getYearFromEventDate(sortedBlocks[0].eventDate)
+    : "-"
+  const lastYear = sortedBlocks[sortedBlocks.length - 1]
+    ? getYearFromEventDate(sortedBlocks[sortedBlocks.length - 1].eventDate)
+    : "-"
+
+  return (
+    <div className="mt-8">
+      <div className="rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-sm font-semibold text-violet-700">
+              Espelho longitudinal
+            </p>
+
+            <h3 className="mt-1 text-2xl font-bold text-violet-950">
+              Linha da vida emocional
+            </h3>
+
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-violet-700">
+              Visualize os acontecimentos principais em todos os anos, com seus
+              desdobramentos e conexões emocionais ao lado.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowOnlyConnected(!showOnlyConnected)}
+            className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
+              showOnlyConnected
+                ? "bg-violet-800 text-white"
+                : "bg-white text-violet-800 hover:bg-violet-100"
+            }`}
+          >
+            {showOnlyConnected
+              ? "Mostrar todos"
+              : "Mostrar apenas conectados"}
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Eventos principais
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {mainBlocks.length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Pessoas envolvidas
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {totalPeople}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Conexões identificadas
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {totalConnections}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Período coberto
+            </p>
+
+            <p className="mt-1 text-lg font-bold text-violet-800">
+              {firstYear} — {lastYear}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6">
+        <div className="relative border-l-2 border-violet-100 pl-8">
+          <div className="space-y-5">
+            {visibleBlocks.map((block) => {
+              const connectedBlocks = getMirrorConnectedBlocks(block, blocksById)
+
+              return (
+                <MirrorMainCard
+                  key={block.id}
+                  block={block}
+                  connectedBlocks={connectedBlocks}
+                  onOpenBlock={onOpenBlock}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {visibleBlocks.length === 0 && (
+          <div className="flex min-h-[220px] items-center justify-center text-center">
+            <div>
+              <p className="text-lg font-semibold text-slate-800">
+                Nenhum acontecimento encontrado
+              </p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Os acontecimentos aparecerão aqui quando houver blocos
+                registrados.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
