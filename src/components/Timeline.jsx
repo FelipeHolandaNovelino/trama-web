@@ -19,6 +19,11 @@ const timelineModes = [
     label: "Relacional",
     description: "Blocos agrupados pelas pessoas importantes",
   },
+  {
+    id: "mirror",
+    label: "Espelho",
+    description: "Acontecimentos organizados pela data em que ocorreram na vida do paciente",
+  },
 ]
 
 const monthLabels = [
@@ -59,6 +64,14 @@ const colorByType = {
   "Observação clínica": "border-blue-200 bg-blue-50 text-blue-800",
 }
 
+const mirrorColorByType = {
+  "Marco positivo": "border-emerald-200 bg-emerald-50",
+  "Evento traumático": "border-rose-200 bg-rose-50",
+  Insight: "border-amber-200 bg-amber-50",
+  Evento: "border-violet-200 bg-violet-50",
+  "Observação clínica": "border-blue-200 bg-blue-50",
+}
+
 function getSessionsFromMonth(monthGroup) {
   if (!monthGroup) return []
 
@@ -94,7 +107,11 @@ function getAllBlocks(timelineData) {
     .flatMap((yearGroup) =>
       yearGroup.months.flatMap((monthGroup) =>
         getSessionsFromMonth(monthGroup).flatMap((session) =>
-          session.blocks || []
+          (session.blocks || []).map((block) => ({
+            ...block,
+            sessionDate: block.sessionDate || session.date || block.date,
+            eventDate: block.eventDate || block.date,
+          }))
         )
       )
     )
@@ -162,6 +179,51 @@ function getMonthNumberFromDate(date) {
   }
 
   return ""
+}
+
+function formatDateToComparable(dateString) {
+  if (!dateString) return ""
+
+  if (dateString.includes("-")) {
+    return dateString
+  }
+
+  const [day, month, year] = dateString.split("/")
+  return `${year}-${month}-${day}`
+}
+
+function getYearFromEventDate(dateString) {
+  const comparableDate = formatDateToComparable(dateString)
+  return comparableDate.split("-")[0]
+}
+
+function sortBlocksByEventDate(blocks) {
+  return [...blocks].sort((firstBlock, secondBlock) => {
+    const firstDate = formatDateToComparable(firstBlock.eventDate)
+    const secondDate = formatDateToComparable(secondBlock.eventDate)
+
+    return firstDate.localeCompare(secondDate)
+  })
+}
+
+function groupBlocksByEventYear(blocks) {
+  return blocks.reduce((groups, block) => {
+    const year = getYearFromEventDate(block.eventDate)
+
+    if (!groups[year]) {
+      groups[year] = []
+    }
+
+    groups[year].push(block)
+
+    return groups
+  }, {})
+}
+
+function getSortedYearEntries(groupedBlocks) {
+  return Object.entries(groupedBlocks).sort(([firstYear], [secondYear]) => {
+    return Number(firstYear) - Number(secondYear)
+  })
 }
 
 function GroupedTimelineView({
@@ -454,6 +516,124 @@ function ChronologicalTimelineView({
   )
 }
 
+function MirrorBlockCard({ block, onOpenBlock }) {
+  const connectionsCount = block.connections?.length || 0
+  const hasConnections = connectionsCount > 0
+
+  return (
+    <button
+      onClick={() => onOpenBlock(block)}
+      className={`w-full rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        mirrorColorByType[block.type] || "border-slate-200 bg-slate-50"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold text-slate-500">
+              {block.type} • {block.eventDate}
+            </p>
+
+            {hasConnections && (
+              <span className="rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {connectionsCount} conexão
+                {connectionsCount > 1 ? "ões" : ""}
+              </span>
+            )}
+          </div>
+
+          <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
+        </div>
+
+        <span className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700">
+          {block.intensity}/10
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(block.emotions || []).slice(0, 3).map((emotion) => (
+          <span
+            key={emotion}
+            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+          >
+            {emotion}
+          </span>
+        ))}
+
+        {(block.people || []).slice(0, 2).map((person) => (
+          <span
+            key={person}
+            className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+          >
+            {person}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <span>Relatado na sessão: {block.sessionDate}</span>
+        <span className="font-medium text-violet-700">Abrir bloco</span>
+      </div>
+    </button>
+  )
+}
+
+function MirrorTimelineView({ blocks, onOpenBlock }) {
+  const sortedBlocks = sortBlocksByEventDate(blocks)
+  const groupedBlocks = groupBlocksByEventYear(sortedBlocks)
+  const yearEntries = getSortedYearEntries(groupedBlocks)
+
+  return (
+    <div className="mt-8">
+      <div className="mb-6 rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h3 className="text-xl font-bold text-violet-950">
+              Espelho do paciente
+            </h3>
+
+            <p className="mt-1 text-sm text-violet-700">
+              Linha do tempo contínua da vida emocional, organizada pela data do
+              acontecimento — não pela data da sessão.
+            </p>
+          </div>
+
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-violet-700">
+            {sortedBlocks.length} acontecimento
+            {sortedBlocks.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {yearEntries.map(([year, yearBlocks]) => (
+          <div key={year} className="grid grid-cols-[90px_1fr] gap-5">
+            <div>
+              <div className="sticky top-6 rounded-2xl bg-violet-700 px-4 py-3 text-center text-white">
+                <p className="text-lg font-bold">{year}</p>
+                <p className="text-[11px] text-violet-100">
+                  {yearBlocks.length} evento
+                  {yearBlocks.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 border-l-2 border-violet-100 pl-5">
+              {yearBlocks.map((block) => (
+                <MirrorBlockCard
+                  key={block.id}
+                  block={block}
+                  onOpenBlock={onOpenBlock}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function Timeline({
   timelineData,
   onDeleteBlock,
@@ -591,6 +771,10 @@ export function Timeline({
           onDeleteBlock={onDeleteBlock}
           onEditBlock={onEditBlock}
         />
+      )}
+
+      {selectedMode === "mirror" && (
+        <MirrorTimelineView blocks={allBlocks} onOpenBlock={handleOpenBlock} />
       )}
 
       <SessionModal
