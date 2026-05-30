@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+
 const colorByType = {
   "Marco positivo": "border-emerald-200 bg-emerald-50",
   "Evento traumático": "border-rose-200 bg-rose-50",
@@ -102,12 +104,45 @@ export function SessionModal({
   onEditBlock,
   onDeleteBlock,
   onAddBlockToSession,
+  onUpdateSession,
 }) {
+  const [isEditingSession, setIsEditingSession] = useState(false)
+  const [sessionTitle, setSessionTitle] = useState("")
+  const [sessionSummary, setSessionSummary] = useState("")
+
+  useEffect(() => {
+    if (!session) return
+
+    setSessionTitle(session.title || `Sessão em ${session.date}`)
+    setSessionSummary(session.summary || "")
+    setIsEditingSession(false)
+  }, [session])
+
   if (!session) return null
 
   const totalConnections = (session.blocks || []).reduce((total, block) => {
     return total + (block.connections?.length || 0)
   }, 0)
+
+  function handleCancelEdit() {
+    setSessionTitle(session.title || `Sessão em ${session.date}`)
+    setSessionSummary(session.summary || "")
+    setIsEditingSession(false)
+  }
+
+  function handleSaveSessionEdit() {
+    if (!sessionTitle.trim()) {
+      alert("O título da sessão não pode ficar vazio.")
+      return
+    }
+
+    onUpdateSession(session.id, {
+      title: sessionTitle.trim(),
+      summary: sessionSummary.trim(),
+    })
+
+    setIsEditingSession(false)
+  }
 
   return (
     <div
@@ -119,33 +154,97 @@ export function SessionModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-6">
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold text-violet-700">
               Sessão do paciente
             </p>
 
-            <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              {session.title || `Sessão em ${session.date}`}
-            </h2>
+            {isEditingSession ? (
+              <div className="mt-3 space-y-4">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Título da sessão
+                  </span>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Data da sessão: {session.date}
-            </p>
+                  <input
+                    type="text"
+                    value={sessionTitle}
+                    onChange={(event) => setSessionTitle(event.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+                  />
+                </label>
 
-            {session.summary && (
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-600">
-                {session.summary}
-              </p>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Resumo da sessão
+                  </span>
+
+                  <textarea
+                    rows="3"
+                    value={sessionSummary}
+                    onChange={(event) => setSessionSummary(event.target.value)}
+                    className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+                    placeholder="Ex: sessão focada em limites, sobrecarga e conflitos familiares."
+                  />
+                </label>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveSessionEdit}
+                    className="rounded-2xl bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-900"
+                  >
+                    Salvar sessão
+                  </button>
+
+                  <button
+                    onClick={handleCancelEdit}
+                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                  >
+                    Cancelar edição
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="mt-1 text-2xl font-bold text-slate-900">
+                  {session.title || `Sessão em ${session.date}`}
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Data da sessão: {session.date}
+                </p>
+
+                {session.summary ? (
+                  <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-600">
+                    {session.summary}
+                  </p>
+                ) : (
+                  <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-500">
+                    Esta sessão ainda não possui resumo.
+                  </p>
+                )}
+              </>
             )}
           </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => onAddBlockToSession(session)}
-              className="rounded-full bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-900"
-            >
-              + Adicionar bloco
-            </button>
+          <div className="flex flex-wrap justify-end gap-3">
+            {!isEditingSession && (
+              <>
+                <button
+                  onClick={() => setIsEditingSession(true)}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Editar sessão
+                </button>
+
+                <button
+                  onClick={() => onAddBlockToSession(session)}
+                  className="rounded-full bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-900"
+                >
+                  + Adicionar bloco
+                </button>
+              </>
+            )}
 
             <button
               onClick={onClose}

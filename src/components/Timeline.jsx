@@ -264,7 +264,7 @@ function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
 
       <div className="flex flex-col justify-center border-r border-slate-100 px-5 py-5">
         <p className="text-sm font-semibold text-slate-900">
-          Sessão {sessionNumber}
+          {session.title || `Sessão ${sessionNumber}`}
         </p>
 
         <p className="mt-1 text-xs text-slate-500">
@@ -459,6 +459,7 @@ export function Timeline({
   onDeleteBlock,
   onEditBlock,
   onAddBlockToSession,
+  onUpdateSession,
 }) {
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
@@ -508,6 +509,22 @@ export function Timeline({
   function handleAddBlockToSession(session) {
     setSelectedSession(null)
     onAddBlockToSession(session)
+  }
+
+  function handleUpdateSession(sessionId, updatedSessionData) {
+    onUpdateSession(sessionId, updatedSessionData)
+
+    setSelectedSession((currentSession) => {
+      if (!currentSession || currentSession.id !== sessionId) {
+        return currentSession
+      }
+
+      return {
+        ...currentSession,
+        title: updatedSessionData.title,
+        summary: updatedSessionData.summary,
+      }
+    })
   }
 
   return (
@@ -577,6 +594,7 @@ export function Timeline({
         onEditBlock={onEditBlock}
         onDeleteBlock={onDeleteBlock}
         onAddBlockToSession={handleAddBlockToSession}
+        onUpdateSession={handleUpdateSession}
       />
 
       <TimelineBlockModal

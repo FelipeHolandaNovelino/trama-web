@@ -246,6 +246,31 @@ function addBlockToExistingSession(currentTimeline, sessionId, blockData) {
   }))
 }
 
+function updateSessionInTimeline(currentTimeline, sessionId, updatedSessionData) {
+  return currentTimeline.map((yearGroup) => ({
+    ...yearGroup,
+    months: yearGroup.months.map((monthGroup) => {
+      const sessions = getSessionsFromMonth(monthGroup).map((session) => {
+        if (session.id !== sessionId) {
+          return session
+        }
+
+        return {
+          ...session,
+          title: updatedSessionData.title,
+          summary: updatedSessionData.summary,
+        }
+      })
+
+      return {
+        ...monthGroup,
+        blocks: undefined,
+        sessions,
+      }
+    }),
+  }))
+}
+
 function removeBlockFromTimeline(currentTimeline, blockIdToRemove) {
   return currentTimeline
     .map((yearGroup) => {
@@ -382,6 +407,12 @@ export function PatientPage() {
     setTargetSession(null)
   }
 
+  function handleUpdateSession(sessionId, updatedSessionData) {
+    setTimelineData((currentTimeline) =>
+      updateSessionInTimeline(currentTimeline, sessionId, updatedSessionData)
+    )
+  }
+
   function handleDeleteBlock(blockId) {
     const confirmed = confirm("Tem certeza que deseja excluir este bloco?")
 
@@ -422,6 +453,7 @@ export function PatientPage() {
           onDeleteBlock={handleDeleteBlock}
           onEditBlock={handleEditBlock}
           onAddBlockToSession={handleAddBlockToSession}
+          onUpdateSession={handleUpdateSession}
         />
 
         <RightPanel patient={patient} timelineData={timelineData} />
