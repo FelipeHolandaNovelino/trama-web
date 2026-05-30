@@ -3,7 +3,6 @@ import { timeline } from "../data/timeline"
 import { patient } from "../data/patient"
 import { PatientHeader } from "../components/PatientHeader"
 import { Timeline } from "../components/Timeline"
-import { RightPanel } from "../components/RightPanel"
 import { AddSessionModal } from "../components/AddSessionModal"
 
 const STORAGE_KEY = "trama_timeline_data"
@@ -489,19 +488,19 @@ export function PatientPage() {
   }
 
   return (
-    <main className="flex-1 p-8">
+    <main className="mx-auto w-full max-w-[1800px] px-8 py-8">
       <PatientHeader patient={patient} onAddSession={handleOpenAddSession} />
 
       <div className="mt-4 flex justify-end">
         <button
           onClick={handleResetTimeline}
-          className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
         >
           Restaurar timeline inicial
         </button>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="mt-6">
         <Timeline
           timelineData={timelineData}
           onDeleteBlock={handleDeleteBlock}
@@ -510,8 +509,6 @@ export function PatientPage() {
           onUpdateSession={handleUpdateSession}
           onDeleteSession={handleDeleteSession}
         />
-
-        <RightPanel patient={patient} timelineData={timelineData} />
       </div>
 
       <AddSessionModal
