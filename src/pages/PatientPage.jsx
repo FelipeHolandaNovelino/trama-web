@@ -491,15 +491,6 @@ export function PatientPage() {
     <main className="mx-auto w-full max-w-[1800px] px-8 py-8">
       <PatientHeader patient={patient} onAddSession={handleOpenAddSession} />
 
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleResetTimeline}
-          className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
-        >
-          Restaurar timeline inicial
-        </button>
-      </div>
-
       <div className="mt-6">
         <Timeline
           timelineData={timelineData}
@@ -510,6 +501,15 @@ export function PatientPage() {
           onDeleteSession={handleDeleteSession}
         />
       </div>
+
+      <footer className="mt-8 flex justify-end border-t border-slate-200 pt-6">
+        <button
+          onClick={handleResetTimeline}
+          className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+        >
+          Restaurar timeline inicial
+        </button>
+      </footer>
 
       <AddSessionModal
         isOpen={isAddSessionModalOpen}

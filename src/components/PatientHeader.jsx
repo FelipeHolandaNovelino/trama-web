@@ -1,32 +1,32 @@
 export function PatientHeader({ patient, onAddSession }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-5">
-        <div className="flex items-center gap-5">
+    <section className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5 lg:px-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <img
             src={patient.avatar}
             alt={patient.name}
-            className="h-20 w-20 rounded-full object-cover"
+            className="h-16 w-16 rounded-full object-cover sm:h-20 sm:w-20"
           />
 
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-bold text-slate-950">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">
                 {patient.name}
               </h2>
 
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 sm:text-sm">
                 {patient.age} anos
               </span>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-slate-500">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 sm:text-sm">
               <span>Última sessão: {patient.lastSession}</span>
               <span>{patient.mainComplaint}</span>
               <span>{patient.context}</span>
             </div>
 
-            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 max-w-5xl text-xs leading-relaxed text-slate-600 sm:text-sm">
               {patient.description}
             </p>
 
@@ -34,7 +34,7 @@ export function PatientHeader({ patient, onAddSession }) {
               {(patient.tags || []).map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700"
+                  className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-medium text-violet-700 sm:text-xs"
                 >
                   {tag}
                 </span>
@@ -43,7 +43,7 @@ export function PatientHeader({ patient, onAddSession }) {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row lg:shrink-0">
           <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Editar paciente
           </button>

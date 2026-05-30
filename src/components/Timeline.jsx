@@ -234,20 +234,6 @@ function sortBlocksByEventDate(blocks) {
   })
 }
 
-function groupBlocksByEventYear(blocks) {
-  return blocks.reduce((groups, block) => {
-    const year = getYearFromEventDate(block.eventDate)
-
-    if (!groups[year]) {
-      groups[year] = []
-    }
-
-    groups[year].push(block)
-
-    return groups
-  }, {})
-}
-
 function getTotalBlocksFromSessions(sessions) {
   return sessions.reduce((total, session) => {
     return total + (session.blocks || []).length
@@ -322,14 +308,16 @@ function GroupedTimelineView({
   )
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
       {groups.map(([groupName, blocks]) => (
         <div
           key={groupName}
-          className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+          className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
         >
           <div className="mb-4">
-            <h3 className="text-xl font-bold text-violet-800">{groupName}</h3>
+            <h3 className="text-lg font-bold text-violet-800 sm:text-xl">
+              {groupName}
+            </h3>
 
             <p className="text-sm text-slate-500">
               {blocks.length} bloco{blocks.length > 1 ? "s" : ""} conectado
@@ -361,7 +349,7 @@ function MiniBlockCard({ block, onOpenBlock }) {
         event.stopPropagation()
         onOpenBlock(block)
       }}
-      className={`min-w-[132px] rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
+      className={`min-w-[128px] rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm sm:min-w-[132px] ${
         colorByType[block.type] || "border-slate-200 bg-slate-50 text-slate-800"
       }`}
     >
@@ -398,7 +386,7 @@ function MonthCalendarCard({ month, sessions, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`min-h-[150px] rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+      className={`min-h-[130px] rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:min-h-[150px] ${
         isActive
           ? "border-violet-300 bg-violet-50 shadow-sm"
           : "border-slate-200 bg-white hover:bg-slate-50"
@@ -465,21 +453,23 @@ function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
   return (
     <button
       onClick={() => onOpenSession(session)}
-      className="grid w-full grid-cols-[88px_150px_1fr_44px] items-stretch border-b border-slate-100 text-left transition last:border-b-0 hover:bg-slate-50"
+      className="block w-full border-b border-slate-100 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid lg:grid-cols-[88px_170px_1fr_44px] lg:items-stretch"
     >
-      <div className="flex flex-col items-center justify-center border-r border-slate-100 px-4 py-5">
-        <p className="text-2xl font-bold text-slate-900">
-          {getDayFromDate(session.date)}
-        </p>
+      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:px-4 lg:py-5">
+        <div>
+          <p className="text-2xl font-bold text-slate-900">
+            {getDayFromDate(session.date)}
+          </p>
 
-        <p className="text-xs font-medium text-slate-500">
-          {getMonthNumberFromDate(session.date)}
-        </p>
+          <p className="text-xs font-medium text-slate-500">
+            {getMonthNumberFromDate(session.date)}
+          </p>
+        </div>
 
-        <p className="mt-1 text-xs text-slate-400">16:00</p>
+        <p className="text-xs text-slate-400">16:00</p>
       </div>
 
-      <div className="flex flex-col justify-center border-r border-slate-100 px-5 py-5">
+      <div className="border-b border-slate-100 px-4 py-4 lg:flex lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:px-5 lg:py-5">
         <p className="text-sm font-semibold text-slate-900">
           {session.title || `Sessão ${sessionNumber}`}
         </p>
@@ -490,13 +480,13 @@ function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
         </p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-5 py-4">
+      <div className="flex gap-3 overflow-x-auto px-4 py-4 lg:px-5">
         {(session.blocks || []).map((block) => (
           <MiniBlockCard key={block.id} block={block} onOpenBlock={onOpenBlock} />
         ))}
       </div>
 
-      <div className="flex items-center justify-center text-xl text-slate-400">
+      <div className="hidden items-center justify-center text-xl text-slate-400 lg:flex">
         ›
       </div>
     </button>
@@ -531,14 +521,14 @@ function ChronologicalTimelineView({
 
   return (
     <div className="mt-6 space-y-5">
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">
               Calendário clínico
             </p>
 
-            <h3 className="mt-1 text-2xl font-bold text-slate-900">
+            <h3 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">
               Sessões por mês
             </h3>
 
@@ -550,14 +540,14 @@ function ChronologicalTimelineView({
           <div className="relative">
             <button
               onClick={() => setIsYearMenuOpen(!isYearMenuOpen)}
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-900 shadow-sm hover:bg-slate-50"
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-900 shadow-sm hover:bg-slate-50 sm:w-auto"
             >
               {selectedYear || "Sem ano"}
               <span className="text-sm text-slate-400">▾</span>
             </button>
 
             {isYearMenuOpen && (
-              <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+              <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:left-auto sm:w-44">
                 {years.map((year) => (
                   <button
                     key={year}
@@ -576,7 +566,7 @@ function ChronologicalTimelineView({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {monthLabels.map((month) => {
             const monthSessions = getMonthSessions(yearGroup, month)
 
@@ -592,7 +582,7 @@ function ChronologicalTimelineView({
           })}
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl bg-white p-4">
             <p className="text-xs font-semibold text-slate-500">
               Sessões no ano
@@ -634,9 +624,9 @@ function ChronologicalTimelineView({
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-6">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 sm:text-lg">
               Sessões de {monthNames[selectedMonth].toLowerCase()}
             </h3>
 
@@ -719,17 +709,17 @@ function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
   const month = getMonthFromEventDate(block.eventDate)
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+    <div className="grid gap-4 xl:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px]">
       <button
         onClick={() => onOpenBlock(block)}
-        className={`relative rounded-3xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        className={`relative rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
           mirrorColorByType[block.type] || "border-slate-200 bg-white"
         }`}
       >
-        <div className="absolute -left-[29px] top-7 h-4 w-4 rounded-full border-4 border-white bg-violet-700 shadow" />
+        <div className="absolute -left-[25px] top-7 h-4 w-4 rounded-full border-4 border-white bg-violet-700 shadow sm:-left-[29px]" />
 
-        <div className="grid gap-4 md:grid-cols-[90px_1fr_180px]">
-          <div className="border-r border-slate-200 pr-4">
+        <div className="grid gap-4 md:grid-cols-[88px_1fr] xl:grid-cols-[90px_1fr_180px]">
+          <div className="border-b border-slate-200 pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
             <p className="text-2xl font-bold text-slate-900">
               {getDayFromDate(block.eventDate)}
             </p>
@@ -739,14 +729,14 @@ function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
             <p className="mt-1 text-xs text-slate-400">{year}</p>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500">{block.type}</p>
 
-            <h4 className="mt-1 text-lg font-bold text-slate-900">
+            <h4 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
               {block.title}
             </h4>
 
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 sm:line-clamp-2">
               {block.text}
             </p>
 
@@ -762,7 +752,7 @@ function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
             </div>
           </div>
 
-          <div className="border-l border-slate-200 pl-4">
+          <div className="border-t border-slate-200 pt-3 md:col-span-2 xl:col-span-1 xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0">
             <p className="text-xs font-semibold text-slate-500">
               Pessoas envolvidas
             </p>
@@ -813,24 +803,28 @@ function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
       </button>
 
       <div className="relative">
-        {connectedBlocks.length > 0 && (
+        {connectedBlocks.length > 0 ? (
           <>
-            <div className="absolute -left-4 top-1/2 hidden h-px w-4 border-t border-dashed border-violet-300 lg:block" />
+            <div className="absolute -left-4 top-1/2 hidden h-px w-4 border-t border-dashed border-violet-300 xl:block" />
 
-            <div className="space-y-3">
-              {connectedBlocks.map((connectedBlock) => (
-                <MirrorConnectedCard
-                  key={connectedBlock.id}
-                  block={connectedBlock}
-                  onOpenBlock={onOpenBlock}
-                />
-              ))}
+            <div className="rounded-3xl border border-dashed border-violet-100 bg-white/60 p-3 xl:border-none xl:bg-transparent xl:p-0">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-700 xl:hidden">
+                Blocos conectados
+              </p>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                {connectedBlocks.map((connectedBlock) => (
+                  <MirrorConnectedCard
+                    key={connectedBlock.id}
+                    block={connectedBlock}
+                    onOpenBlock={onOpenBlock}
+                  />
+                ))}
+              </div>
             </div>
           </>
-        )}
-
-        {connectedBlocks.length === 0 && (
-          <div className="hidden h-full items-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-400 lg:flex">
+        ) : (
+          <div className="hidden h-full items-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-400 xl:flex">
             Sem desdobramentos conectados.
           </div>
         )}
@@ -859,15 +853,15 @@ function MirrorTimelineView({ blocks, onOpenBlock }) {
     : "-"
 
   return (
-    <div className="mt-8">
-      <div className="rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+    <div className="mt-6 sm:mt-8">
+      <div className="rounded-3xl border border-violet-100 bg-violet-50/70 p-4 sm:p-5">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-violet-700">
               Espelho longitudinal
             </p>
 
-            <h3 className="mt-1 text-2xl font-bold text-violet-950">
+            <h3 className="mt-1 text-xl font-bold text-violet-950 sm:text-2xl">
               Linha da vida emocional
             </h3>
 
@@ -891,7 +885,7 @@ function MirrorTimelineView({ blocks, onOpenBlock }) {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl bg-white p-4">
             <p className="text-xs font-semibold text-slate-500">
               Eventos principais
@@ -934,8 +928,8 @@ function MirrorTimelineView({ blocks, onOpenBlock }) {
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6">
-        <div className="relative border-l-2 border-violet-100 pl-8">
+      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6">
+        <div className="relative border-l-2 border-violet-100 pl-6 sm:pl-8">
           <div className="space-y-5">
             {visibleBlocks.map((block) => {
               const connectedBlocks = getMirrorConnectedBlocks(block, blocksById)
@@ -1051,10 +1045,10 @@ export function Timeline({
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-6">
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h3 className="text-xl font-bold text-slate-900">
+          <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
             Sessões do paciente
           </h3>
 
@@ -1063,7 +1057,7 @@ export function Timeline({
           </p>
         </div>
 
-        <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="flex overflow-x-auto rounded-xl border border-slate-200 bg-white">
           {timelineModes.map((mode) => {
             const isActive = selectedMode === mode.id
 
@@ -1071,7 +1065,7 @@ export function Timeline({
               <button
                 key={mode.id}
                 onClick={() => setSelectedMode(mode.id)}
-                className={`px-5 py-2.5 text-sm transition ${
+                className={`shrink-0 px-4 py-2.5 text-sm transition sm:px-5 ${
                   isActive
                     ? "bg-violet-700 text-white"
                     : "text-slate-600 hover:bg-slate-50"
