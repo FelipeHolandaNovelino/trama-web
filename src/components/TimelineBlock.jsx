@@ -22,37 +22,42 @@ export function TimelineBlock({
     forte: "bg-rose-100 text-rose-800",
   }
 
+  const connectionsCount = block.connections?.length || 0
+  const hasConnections = connectionsCount > 0
+
   return (
     <div
       onClick={() => setIsOpen(!isOpen)}
-      className={`w-full cursor-pointer rounded-xl border p-3 text-left transition hover:shadow-md ${
+      className={`w-full cursor-pointer rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
         colorByType[block.type] || "bg-white"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold text-slate-500">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-[11px] font-medium text-slate-500">
               {block.type}
             </p>
 
-            <span className="text-[11px] text-slate-400">•</span>
+            <span className="text-[10px] text-slate-400">•</span>
 
-            <p className="text-[11px] text-slate-500">{block.date}</p>
+            <p className="text-[11px] text-slate-500">
+              {block.eventDate || block.date}
+            </p>
           </div>
 
-          <h4 className="mt-1 text-sm font-semibold leading-snug text-slate-900">
+          <h4 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
             {block.title}
           </h4>
         </div>
 
-        <span className="shrink-0 rounded-full bg-white/70 px-2 py-1 text-[11px] text-slate-700">
+        <span className="shrink-0 rounded-full bg-white/80 px-2 py-1 text-[11px] font-medium text-slate-700">
           {block.intensity}/10
         </span>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {block.emotions.slice(0, 3).map((emotion) => (
+        {(block.emotions || []).slice(0, 3).map((emotion) => (
           <span
             key={emotion}
             className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700"
@@ -62,7 +67,13 @@ export function TimelineBlock({
         ))}
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {hasConnections && (
+          <span className="rounded-full bg-violet-700 px-2.5 py-1 text-[11px] font-semibold text-white">
+            {connectionsCount} conexão{connectionsCount > 1 ? "ões" : ""}
+          </span>
+        )}
+
         <button
           onClick={(event) => {
             event.stopPropagation()
@@ -90,7 +101,10 @@ export function TimelineBlock({
             <p className="text-xs font-semibold text-slate-500">
               Bloco narrativo
             </p>
-            <p className="mt-2 text-sm text-slate-600">{block.text}</p>
+
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              {block.text}
+            </p>
           </div>
 
           <div>
@@ -99,7 +113,7 @@ export function TimelineBlock({
             </p>
 
             <div className="mt-2 flex flex-wrap gap-2">
-              {block.people.map((person) => (
+              {(block.people || []).map((person) => (
                 <span
                   key={person}
                   className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
@@ -114,7 +128,7 @@ export function TimelineBlock({
             <p className="text-xs font-semibold text-slate-500">Tags clínicas</p>
 
             <div className="mt-2 flex flex-wrap gap-2">
-              {block.tags.map((tag) => (
+              {(block.tags || []).map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
@@ -125,7 +139,7 @@ export function TimelineBlock({
             </div>
           </div>
 
-          {block.connections && block.connections.length > 0 && (
+          {hasConnections && (
             <div>
               <p className="text-xs font-semibold text-slate-500">
                 Conexões emocionais
@@ -156,6 +170,7 @@ export function TimelineBlock({
                     </div>
 
                     <p className="mt-2 text-slate-600">{connection.reason}</p>
+
                     <p className="mt-2 font-medium text-violet-700">
                       Clique para abrir o bloco relacionado
                     </p>

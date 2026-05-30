@@ -7,6 +7,9 @@ const colorByType = {
 }
 
 function SessionBlockCard({ block, onOpenBlock, onEditBlock, onDeleteBlock }) {
+  const connectionsCount = block.connections?.length || 0
+  const hasConnections = connectionsCount > 0
+
   return (
     <article
       className={`rounded-2xl border p-4 ${
@@ -15,7 +18,18 @@ function SessionBlockCard({ block, onOpenBlock, onEditBlock, onDeleteBlock }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold text-slate-500">{block.type}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold text-slate-500">
+              {block.type}
+            </p>
+
+            {hasConnections && (
+              <span className="rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {connectionsCount} conexão
+                {connectionsCount > 1 ? "ões" : ""}
+              </span>
+            )}
+          </div>
 
           <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
 
@@ -90,6 +104,10 @@ export function SessionModal({
 }) {
   if (!session) return null
 
+  const totalConnections = (session.blocks || []).reduce((total, block) => {
+    return total + (block.connections?.length || 0)
+  }, 0)
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-6 py-6"
@@ -128,25 +146,52 @@ export function SessionModal({
           </button>
         </div>
 
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-3xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Blocos registrados
+            </p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {(session.blocks || []).length}
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-violet-50 p-4">
+            <p className="text-xs font-semibold text-violet-700">
+              Conexões na sessão
+            </p>
+            <p className="mt-1 text-2xl font-bold text-violet-900">
+              {totalConnections}
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">
+              Tipo de registro
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              Atendimento clínico
+            </p>
+          </div>
+        </div>
+
         <div className="mt-6 rounded-3xl bg-slate-50 p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="font-bold text-slate-900">Blocos da sessão</h3>
 
               <p className="text-sm text-slate-500">
-                {session.blocks.length} bloco
-                {session.blocks.length !== 1 ? "s" : ""} registrado
-                {session.blocks.length !== 1 ? "s" : ""}
+                Abra um bloco para ver narrativa completa e conexões.
               </p>
             </div>
 
             <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-800">
-              Atendimento clínico
+              {totalConnections} conexão{totalConnections !== 1 ? "ões" : ""}
             </span>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {session.blocks.map((block) => (
+            {(session.blocks || []).map((block) => (
               <SessionBlockCard
                 key={block.id}
                 block={block}

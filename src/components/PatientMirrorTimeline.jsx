@@ -96,6 +96,9 @@ function getSortedYearEntries(groupedBlocks) {
 }
 
 function MirrorBlockCard({ block, onOpenBlock }) {
+  const connectionsCount = block.connections?.length || 0
+  const hasConnections = connectionsCount > 0
+
   return (
     <button
       onClick={() => onOpenBlock(block)}
@@ -105,9 +108,18 @@ function MirrorBlockCard({ block, onOpenBlock }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold text-slate-500">
-            {block.type} • {block.eventDate}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold text-slate-500">
+              {block.type} • {block.eventDate}
+            </p>
+
+            {hasConnections && (
+              <span className="rounded-full bg-violet-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {connectionsCount} conexão
+                {connectionsCount > 1 ? "ões" : ""}
+              </span>
+            )}
+          </div>
 
           <h4 className="mt-1 font-semibold text-slate-900">{block.title}</h4>
         </div>
