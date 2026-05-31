@@ -1,32 +1,16 @@
-const monthLabels = [
-  "JAN",
-  "FEV",
-  "MAR",
-  "ABR",
-  "MAI",
-  "JUN",
-  "JUL",
-  "AGO",
-  "SET",
-  "OUT",
-  "NOV",
-  "DEZ",
-]
-
-const monthNames = {
-  JAN: "Janeiro",
-  FEV: "Fevereiro",
-  MAR: "Março",
-  ABR: "Abril",
-  MAI: "Maio",
-  JUN: "Junho",
-  JUL: "Julho",
-  AGO: "Agosto",
-  SET: "Setembro",
-  OUT: "Outubro",
-  NOV: "Novembro",
-  DEZ: "Dezembro",
-}
+import {
+  getAllBlocks,
+  getAllSessions,
+  getAvailableYears,
+  getDayFromDate,
+  getMonthNumberFromDate,
+  getMonthSessions,
+  getMostCommonBlockTypesFromSessions,
+  getTotalBlocksFromSessions,
+  getYearGroup,
+  monthLabels,
+  monthNames,
+} from "../utils/timelineUtils"
 
 const colorByType = {
   "Marco positivo": "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -42,120 +26,6 @@ const dotColorByType = {
   Insight: "bg-amber-400",
   Evento: "bg-violet-400",
   "Observação clínica": "bg-blue-400",
-}
-
-/**
- * Mantém compatibilidade com a estrutura antiga.
- * Antes, meses podiam guardar blocos diretamente; agora, guardam sessões.
- */
-function getSessionsFromMonth(monthGroup) {
-  if (!monthGroup) return []
-
-  if (monthGroup.sessions) {
-    return monthGroup.sessions
-  }
-
-  const blocks = monthGroup.blocks || []
-
-  const sessionsByDate = blocks.reduce((sessions, block) => {
-    const date = block.sessionDate || block.date
-
-    if (!sessions[date]) {
-      sessions[date] = []
-    }
-
-    sessions[date].push(block)
-
-    return sessions
-  }, {})
-
-  return Object.entries(sessionsByDate).map(([date, sessionBlocks], index) => ({
-    id: `session-${date}-${index}`,
-    date,
-    title: `Sessão ${index + 1}`,
-    summary: sessionBlocks[0]?.text || "",
-    blocks: sessionBlocks,
-  }))
-}
-
-/**
- * Centraliza todos os blocos para alimentar contadores globais.
- */
-function getAllBlocks(timelineData) {
-  return timelineData
-    .flatMap((yearGroup) =>
-      yearGroup.months.flatMap((monthGroup) =>
-        getSessionsFromMonth(monthGroup).flatMap((session) =>
-          session.blocks || []
-        )
-      )
-    )
-    .filter(Boolean)
-}
-
-function getAllSessions(timelineData) {
-  return timelineData.flatMap((yearGroup) =>
-    yearGroup.months.flatMap((monthGroup) => getSessionsFromMonth(monthGroup))
-  )
-}
-
-function getAvailableYears(timelineData) {
-  return timelineData.map((yearGroup) => yearGroup.year)
-}
-
-function getYearGroup(timelineData, selectedYear) {
-  return timelineData.find((yearGroup) => yearGroup.year === selectedYear)
-}
-
-function getMonthGroup(yearGroup, selectedMonth) {
-  if (!yearGroup) return null
-
-  return yearGroup.months.find((monthGroup) => monthGroup.month === selectedMonth)
-}
-
-function getMonthSessions(yearGroup, month) {
-  const monthGroup = getMonthGroup(yearGroup, month)
-  return getSessionsFromMonth(monthGroup)
-}
-
-function getDayFromDate(date) {
-  if (!date) return "--"
-
-  if (date.includes("/")) {
-    return date.split("/")[0]
-  }
-
-  if (date.includes("-")) {
-    return date.split("-")[2]
-  }
-
-  return "--"
-}
-
-function getMonthNumberFromDate(date) {
-  if (!date) return ""
-
-  if (date.includes("/")) {
-    return date.split("/")[1]
-  }
-
-  if (date.includes("-")) {
-    return date.split("-")[1]
-  }
-
-  return ""
-}
-
-function getTotalBlocksFromSessions(sessions) {
-  return sessions.reduce((total, session) => {
-    return total + (session.blocks || []).length
-  }, 0)
-}
-
-function getMostCommonBlockTypesFromSessions(sessions) {
-  const blocks = sessions.flatMap((session) => session.blocks || [])
-
-  return blocks.slice(0, 5).map((block) => block.type)
 }
 
 function MiniBlockCard({ block, onOpenBlock }) {
@@ -351,10 +221,6 @@ export function SessionsCalendar({
   const totalBlocksInAllYears = getAllBlocks(timelineData).length
   const totalSessionsInAllYears = getAllSessions(timelineData).length
 
-  function handleSelectYear(year) {
-    onSelectYear(year)
-  }
-
   return (
     <div className="mt-6 space-y-5">
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -389,7 +255,7 @@ export function SessionsCalendar({
                   <button
                     type="button"
                     key={year}
-                    onClick={() => handleSelectYear(year)}
+                    onClick={() => onSelectYear(year)}
                     className={`w-full px-4 py-3 text-left text-sm transition ${
                       year === selectedYear
                         ? "bg-violet-50 font-semibold text-violet-800"

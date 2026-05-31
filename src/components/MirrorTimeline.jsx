@@ -1,19 +1,16 @@
 import { useState } from "react"
 
-const monthLabels = [
-  "JAN",
-  "FEV",
-  "MAR",
-  "ABR",
-  "MAI",
-  "JUN",
-  "JUL",
-  "AGO",
-  "SET",
-  "OUT",
-  "NOV",
-  "DEZ",
-]
+import {
+  getBlocksById,
+  getConnectionsCount,
+  getDayFromDate,
+  getMirrorConnectedBlocks,
+  getMirrorMainBlocks,
+  getMonthFromEventDate,
+  getUniquePeopleCount,
+  getYearFromEventDate,
+  sortBlocksByEventDate,
+} from "../utils/timelineUtils"
 
 const mirrorColorByType = {
   "Marco positivo": "border-emerald-200 bg-emerald-50",
@@ -29,117 +26,10 @@ const mirrorConnectionColorByStrength = {
   forte: "border-emerald-200 bg-emerald-50 text-emerald-800",
 }
 
-/**
- * Converte datas brasileiras para um formato comparável.
- * Isso permite ordenar corretamente eventos vindos de "dd/mm/yyyy" ou "yyyy-mm-dd".
- */
-function formatDateToComparable(dateString) {
-  if (!dateString) return ""
-
-  if (dateString.includes("-")) {
-    return dateString
-  }
-
-  const [day, month, year] = dateString.split("/")
-  return `${year}-${month}-${day}`
-}
-
-function getDayFromDate(date) {
-  if (!date) return "--"
-
-  if (date.includes("/")) {
-    return date.split("/")[0]
-  }
-
-  if (date.includes("-")) {
-    return date.split("-")[2]
-  }
-
-  return "--"
-}
-
-function getYearFromEventDate(dateString) {
-  const comparableDate = formatDateToComparable(dateString)
-  return comparableDate.split("-")[0]
-}
-
-function getMonthFromEventDate(dateString) {
-  const comparableDate = formatDateToComparable(dateString)
-  const [, month] = comparableDate.split("-")
-
-  return monthLabels[Number(month) - 1] || ""
-}
-
-function sortBlocksByEventDate(blocks) {
-  return [...blocks].sort((firstBlock, secondBlock) => {
-    const firstDate = formatDateToComparable(firstBlock.eventDate)
-    const secondDate = formatDateToComparable(secondBlock.eventDate)
-
-    return firstDate.localeCompare(secondDate)
-  })
-}
-
-/**
- * Cria um índice por ID para localizar rapidamente blocos conectados.
- */
-function getBlocksById(blocks) {
-  return blocks.reduce((accumulator, block) => {
-    if (!block?.id) return accumulator
-
-    accumulator[block.id] = block
-    return accumulator
-  }, {})
-}
-
-/**
- * Define quais blocos aparecem como eventos principais no Espelho.
- * Blocos que são alvo de conexão aparecem como desdobramentos do bloco principal.
- */
-function getMirrorMainBlocks(blocks) {
-  const targetIds = new Set(
-    blocks.flatMap((block) =>
-      (block.connections || []).map((connection) => connection.targetBlockId)
-    )
-  )
-
-  return sortBlocksByEventDate(blocks).filter((block) => !targetIds.has(block.id))
-}
-
-function getMirrorConnectedBlocks(block, blocksById) {
-  return (block.connections || [])
-    .map((connection) => {
-      const connectedBlock = blocksById[connection.targetBlockId]
-
-      if (!connectedBlock) return null
-
-      return {
-        ...connectedBlock,
-        connectionReason: connection.reason,
-        connectionStrength: connection.strength,
-      }
-    })
-    .filter(Boolean)
-}
-
-function getUniquePeopleCount(blocks) {
-  const people = new Set()
-
-  blocks.forEach((block) => {
-    ;(block.people || []).forEach((person) => people.add(person))
-  })
-
-  return people.size
-}
-
-function getConnectionsCount(blocks) {
-  return blocks.reduce((total, block) => {
-    return total + (block.connections || []).length
-  }, 0)
-}
-
 function MirrorConnectedCard({ block, onOpenBlock }) {
   return (
     <button
+      type="button"
       onClick={() => onOpenBlock(block)}
       className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
         mirrorConnectionColorByStrength[block.connectionStrength] ||
@@ -179,6 +69,7 @@ function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px]">
       <button
+        type="button"
         onClick={() => onOpenBlock(block)}
         className={`relative rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
           mirrorColorByType[block.type] || "border-slate-200 bg-white"
@@ -343,6 +234,7 @@ export function MirrorTimeline({ blocks, onOpenBlock }) {
           </div>
 
           <button
+            type="button"
             onClick={() => setShowOnlyConnected(!showOnlyConnected)}
             className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
               showOnlyConnected

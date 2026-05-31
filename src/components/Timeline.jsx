@@ -5,6 +5,13 @@ import { MirrorTimeline } from "./MirrorTimeline"
 import { SessionsCalendar } from "./SessionsCalendar"
 import { GroupedBlocksView } from "./GroupedBlocksView"
 
+import {
+  getAllBlocks,
+  getAvailableYears,
+  getBlocksById,
+  groupBlocksByArrayField,
+} from "../utils/timelineUtils"
+
 const timelineModes = [
   {
     id: "chronological",
@@ -29,83 +36,6 @@ const timelineModes = [
   },
 ]
 
-/**
- * Mantém compatibilidade entre dados antigos e novos.
- * Meses antigos podem ter blocos soltos; meses novos possuem sessões.
- */
-function getSessionsFromMonth(monthGroup) {
-  if (!monthGroup) return []
-
-  if (monthGroup.sessions) {
-    return monthGroup.sessions
-  }
-
-  const blocks = monthGroup.blocks || []
-
-  const sessionsByDate = blocks.reduce((sessions, block) => {
-    const date = block.sessionDate || block.date
-
-    if (!sessions[date]) {
-      sessions[date] = []
-    }
-
-    sessions[date].push(block)
-
-    return sessions
-  }, {})
-
-  return Object.entries(sessionsByDate).map(([date, sessionBlocks], index) => ({
-    id: `session-${date}-${index}`,
-    date,
-    title: `Sessão ${index + 1}`,
-    summary: sessionBlocks[0]?.text || "",
-    blocks: sessionBlocks,
-  }))
-}
-
-/**
- * Centraliza todos os blocos da timeline em uma lista única.
- * Essa lista alimenta Emoções, Relações, Espelho e navegação por conexões.
- */
-function getAllBlocks(timelineData) {
-  return timelineData
-    .flatMap((yearGroup) =>
-      yearGroup.months.flatMap((monthGroup) =>
-        getSessionsFromMonth(monthGroup).flatMap((session) =>
-          (session.blocks || []).map((block) => ({
-            ...block,
-            sessionDate: block.sessionDate || session.date || block.date,
-            eventDate: block.eventDate || block.date,
-          }))
-        )
-      )
-    )
-    .filter(Boolean)
-}
-
-/**
- * Agrupa blocos por campos que são listas, como emoções ou pessoas.
- */
-function groupBlocksByArrayField(blocks, fieldName) {
-  return blocks.reduce((groups, block) => {
-    const values = block[fieldName] || []
-
-    values.forEach((value) => {
-      if (!groups[value]) {
-        groups[value] = []
-      }
-
-      groups[value].push(block)
-    })
-
-    return groups
-  }, {})
-}
-
-function getAvailableYears(timelineData) {
-  return timelineData.map((yearGroup) => yearGroup.year)
-}
-
 export function Timeline({
   timelineData,
   onDeleteBlock,
@@ -125,19 +55,18 @@ export function Timeline({
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
 
+  /**
+   * Lista única de blocos usada por todas as visões clínicas.
+   */
   const allBlocks = useMemo(() => {
     return getAllBlocks(timelineData)
   }, [timelineData])
 
+  /**
+   * Índice usado para abrir blocos conectados dentro do modal.
+   */
   const blocksById = useMemo(() => {
-    return allBlocks.reduce((accumulator, block) => {
-      if (!block?.id) {
-        return accumulator
-      }
-
-      accumulator[block.id] = block
-      return accumulator
-    }, {})
+    return getBlocksById(allBlocks)
   }, [allBlocks])
 
   const emotionalGroups = useMemo(() => {
