@@ -4,6 +4,7 @@ import { AddPatientModal } from "../components/AddPatientModal"
 import { ConfirmModal } from "../components/ConfirmModal"
 import { PatientCard } from "../components/PatientCard"
 import { PatientsFilters } from "../components/PatientsFilters"
+import { PatientsStats } from "../components/PatientsStats"
 
 /**
  * Normaliza textos para busca.
@@ -171,31 +172,7 @@ export function PatientsPage({
         </div>
       </section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Total de pacientes</p>
-
-          <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {stats.total}
-          </strong>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Em acompanhamento</p>
-
-          <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {stats.active}
-          </strong>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Triagem inicial</p>
-
-          <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {stats.screening}
-          </strong>
-        </div>
-      </section>
+      <PatientsStats stats={stats} />
 
       <PatientsFilters
         searchTerm={searchTerm}
