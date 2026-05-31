@@ -1,17 +1,28 @@
 import { useState } from "react"
-import { patient } from "../data/patient"
+
+import { patient as basePatient } from "../data/patient"
 import { PatientHeader } from "../components/PatientHeader"
 import { Timeline } from "../components/Timeline"
 import { AddSessionModal } from "../components/AddSessionModal"
 import { ConfirmModal } from "../components/ConfirmModal"
 import { useTimelineData } from "../hooks/useTimelineData"
 
-export function PatientPage() {
+export function PatientPage({ selectedPatient, onBackToPatients }) {
+  /**
+   * Usa o paciente selecionado pela lista.
+   * Caso a página seja aberta diretamente, mantém o paciente base do projeto.
+   */
+  const patient = selectedPatient || basePatient
+
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState(null)
   const [targetSession, setTargetSession] = useState(null)
   const [confirmation, setConfirmation] = useState(null)
 
+  /**
+   * Hook central da timeline.
+   * Ele mantém estado, persistência local e operações de criação/edição/exclusão.
+   */
   const {
     timelineData,
     existingBlocks,
@@ -127,7 +138,11 @@ export function PatientPage() {
 
   return (
     <main className="mx-auto w-full max-w-[1800px] px-8 py-8">
-      <PatientHeader patient={patient} onAddSession={handleOpenAddSession} />
+      <PatientHeader
+        patient={patient}
+        onAddSession={handleOpenAddSession}
+        onBackToPatients={onBackToPatients}
+      />
 
       <div className="mt-6">
         <Timeline
