@@ -3,13 +3,7 @@ import { useMemo, useState } from "react"
 import { AddPatientModal } from "../components/AddPatientModal"
 import { ConfirmModal } from "../components/ConfirmModal"
 import { PatientCard } from "../components/PatientCard"
-
-const STATUS_OPTIONS = [
-  "Todos",
-  "Triagem inicial",
-  "Em acompanhamento",
-  "Encerrado",
-]
+import { PatientsFilters } from "../components/PatientsFilters"
 
 /**
  * Normaliza textos para busca.
@@ -203,67 +197,16 @@ export function PatientsPage({
         </div>
       </section>
 
-      <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[1fr_240px_auto] lg:items-end">
-          <label className="grid gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Buscar paciente
-            </span>
-
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Busque por nome, queixa, tag, relação, e-mail ou telefone"
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-            />
-          </label>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Status
-            </span>
-
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </label>
-
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            disabled={!hasActiveFilters}
-            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Limpar filtros
-          </button>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <span>
-            Exibindo{" "}
-            <strong className="font-semibold text-slate-800">
-              {filteredPatients.length}
-            </strong>{" "}
-            de{" "}
-            <strong className="font-semibold text-slate-800">
-              {patients.length}
-            </strong>{" "}
-            pacientes.
-          </span>
-
-          {hasActiveFilters && (
-            <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-              Filtros ativos
-            </span>
-          )}
-        </div>
-      </section>
+      <PatientsFilters
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        totalPatients={patients.length}
+        filteredPatientsCount={filteredPatients.length}
+        hasActiveFilters={Boolean(hasActiveFilters)}
+        onSearchChange={setSearchTerm}
+        onStatusChange={setStatusFilter}
+        onClearFilters={handleClearFilters}
+      />
 
       {filteredPatients.length > 0 ? (
         <section className="mt-6 grid gap-5 xl:grid-cols-3">
