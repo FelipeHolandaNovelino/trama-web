@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 
+import { getTimelineSeedForPatient } from "../data/timelineSeeds"
 import { getAllBlocks } from "../utils/timelineUtils"
 import {
   addBlockToExistingSession,
@@ -26,35 +27,37 @@ function getTimelineStorageKey(patientId) {
 }
 
 /**
- * Retorna a estrutura inicial da timeline.
+ * Retorna a timeline inicial de um paciente.
  *
- * Todos os pacientes começam com timeline vazia.
- * A timeline demonstrativa antiga não é mais carregada automaticamente.
+ * Pacientes com seed demonstrativo recebem uma base inicial.
+ * Pacientes sem seed começam com timeline vazia e serão preenchidos manualmente.
  */
-function getEmptyTimeline() {
-  return []
+function getDefaultTimelineForPatient(patientId) {
+  return getTimelineSeedForPatient(patientId)
 }
 
 /**
  * Carrega a timeline salva de um paciente.
  *
- * Se não existir dado salvo, o paciente começa com timeline vazia.
- * Se o dado salvo estiver inválido, o sistema também recomeça vazio.
+ * Se não existir dado salvo, o sistema usa a timeline inicial daquele paciente.
+ * Para pacientes sem seed, essa timeline inicial será vazia.
  */
 function getInitialTimeline(patientId) {
   const storageKey = getTimelineStorageKey(patientId)
   const savedTimeline = localStorage.getItem(storageKey)
 
   if (!savedTimeline) {
-    return getEmptyTimeline()
+    return getDefaultTimelineForPatient(patientId)
   }
 
   try {
     const parsedTimeline = JSON.parse(savedTimeline)
 
-    return Array.isArray(parsedTimeline) ? parsedTimeline : getEmptyTimeline()
+    return Array.isArray(parsedTimeline)
+      ? parsedTimeline
+      : getDefaultTimelineForPatient(patientId)
   } catch {
-    return getEmptyTimeline()
+    return getDefaultTimelineForPatient(patientId)
   }
 }
 
@@ -96,6 +99,9 @@ export function useTimelineData(patientId = DEFAULT_PATIENT_ID) {
   /**
    * Persiste somente a timeline do paciente atualmente aberto.
    * Cada paciente salva seus dados em uma chave própria no localStorage.
+   *
+   * Quando um paciente com seed é aberto pela primeira vez, o seed passa a ser
+   * salvo na mesma chave usada por sessões criadas manualmente.
    */
   useEffect(() => {
     if (timelineState.patientId !== safePatientId) {
@@ -109,7 +115,9 @@ export function useTimelineData(patientId = DEFAULT_PATIENT_ID) {
 
   /**
    * Aplica alterações na timeline do paciente atual.
-   * Centralizar essa atualização evita repetição nas ações de criação, edição e exclusão.
+   *
+   * Centralizar essa atualização evita repetição nas ações de criação,
+   * edição e exclusão.
    */
   function updateCurrentTimeline(updater) {
     setTimelineState((currentState) => {
@@ -174,17 +182,20 @@ export function useTimelineData(patientId = DEFAULT_PATIENT_ID) {
   }
 
   /**
-   * Limpa a timeline apenas do paciente atual.
-   * Outros pacientes não são afetados.
+   * Restaura a timeline apenas do paciente atual.
+   *
+   * Pacientes com seed voltam para sua base demonstrativa.
+   * Pacientes sem seed voltam para uma timeline vazia.
    */
   function resetTimeline() {
     const storageKey = getTimelineStorageKey(safePatientId)
+    const defaultTimeline = getDefaultTimelineForPatient(safePatientId)
 
     localStorage.removeItem(storageKey)
 
     setTimelineState({
       patientId: safePatientId,
-      data: getEmptyTimeline(),
+      data: defaultTimeline,
     })
   }
 
