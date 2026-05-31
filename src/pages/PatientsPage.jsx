@@ -21,8 +21,10 @@ export function PatientsPage({
   patientStats,
   onOpenPatient,
   onCreatePatient,
+  onUpdatePatient,
 }) {
-  const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false)
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false)
+  const [editingPatient, setEditingPatient] = useState(null)
 
   /**
    * Os contadores vêm do hook usePatientsData.
@@ -34,12 +36,34 @@ export function PatientsPage({
     screening: 0,
   }
 
-  function handleOpenAddPatientModal() {
-    setIsAddPatientModalOpen(true)
+  function handleOpenCreatePatientModal() {
+    setEditingPatient(null)
+    setIsPatientModalOpen(true)
   }
 
-  function handleCloseAddPatientModal() {
-    setIsAddPatientModalOpen(false)
+  function handleOpenEditPatientModal(patient) {
+    setEditingPatient(patient)
+    setIsPatientModalOpen(true)
+  }
+
+  function handleClosePatientModal() {
+    setEditingPatient(null)
+    setIsPatientModalOpen(false)
+  }
+
+  /**
+   * Decide se o modal deve criar um novo paciente ou atualizar um existente.
+   * A página não altera dados diretamente; ela delega essa responsabilidade ao App/hook.
+   */
+  function handleSavePatient(patientData) {
+    if (editingPatient) {
+      onUpdatePatient(editingPatient.id, patientData)
+      handleClosePatientModal()
+      return
+    }
+
+    onCreatePatient(patientData)
+    handleClosePatientModal()
   }
 
   return (
@@ -63,7 +87,7 @@ export function PatientsPage({
 
           <button
             type="button"
-            onClick={handleOpenAddPatientModal}
+            onClick={handleOpenCreatePatientModal}
             className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
           >
             + Novo paciente
@@ -98,7 +122,7 @@ export function PatientsPage({
         {patients.map((patient) => (
           <article
             key={patient.id}
-            className="flex min-h-[360px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md"
+            className="flex min-h-[380px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md"
           >
             <div>
               <div className="flex items-start justify-between gap-4">
@@ -165,26 +189,37 @@ export function PatientsPage({
                 </div>
               </div>
 
-              {/*
-                A navegação ainda é controlada pelo App.jsx.
-                Futuramente, esse clique pode ser substituído por uma rota real.
-              */}
-              <button
-                type="button"
-                onClick={() => onOpenPatient(patient)}
-                className="mt-5 w-full rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800 transition hover:bg-violet-100"
-              >
-                Abrir paciente
-              </button>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditPatientModal(patient)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Editar
+                </button>
+
+                {/*
+                  A navegação ainda é controlada pelo App.jsx.
+                  Futuramente, esse clique pode ser substituído por uma rota real.
+                */}
+                <button
+                  type="button"
+                  onClick={() => onOpenPatient(patient)}
+                  className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800 transition hover:bg-violet-100"
+                >
+                  Abrir paciente
+                </button>
+              </div>
             </div>
           </article>
         ))}
       </section>
 
       <AddPatientModal
-        isOpen={isAddPatientModalOpen}
-        onClose={handleCloseAddPatientModal}
-        onCreatePatient={onCreatePatient}
+        isOpen={isPatientModalOpen}
+        onClose={handleClosePatientModal}
+        onSavePatient={handleSavePatient}
+        initialPatient={editingPatient}
       />
     </main>
   )

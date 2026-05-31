@@ -38,7 +38,7 @@ function calculateAgeFromBirthDate(birthDate) {
 }
 
 /**
- * Converte uma data no formato usado pelo input date para o formato visual brasileiro.
+ * Converte uma data ISO simples para o formato visual brasileiro.
  * Exemplo: 2026-03-27 → 27/03/2026.
  */
 function formatDateToBrazilian(dateValue) {
@@ -49,6 +49,36 @@ function formatDateToBrazilian(dateValue) {
   if (!year || !month || !day) return "—"
 
   return `${day}/${month}/${year}`
+}
+
+/**
+ * Converte uma data brasileira para o formato aceito pelo input date.
+ * Exemplo: 27/03/2026 → 2026-03-27.
+ */
+function formatBrazilianDateToInput(dateValue) {
+  if (!dateValue || dateValue === "—") return ""
+
+  const [day, month, year] = dateValue.split("/")
+
+  if (!day || !month || !year) return ""
+
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Converte arrays em texto separado por vírgulas para preencher inputs.
+ * Isso permite editar dados já salvos sem perder a estrutura de lista.
+ */
+function formatListToText(value) {
+  if (Array.isArray(value)) {
+    return value.join(", ")
+  }
+
+  if (typeof value === "string") {
+    return value
+  }
+
+  return ""
 }
 
 /**
@@ -63,25 +93,64 @@ function parseCommaSeparatedList(text) {
 }
 
 /**
- * Modal responsável pelo cadastro inicial de pacientes.
+ * Prepara os dados iniciais do formulário.
  *
- * Ele coleta dados de identificação, agenda clínica e síntese inicial do caso.
- * A persistência continua fora do modal, por meio do hook usePatientsData.
+ * Quando existe initialPatient, o modal entra em modo edição.
+ * Quando não existe, o formulário começa vazio para criação.
  */
-export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
+function getInitialFormData(initialPatient) {
+  if (!initialPatient) {
+    return initialFormData
+  }
+
+  return {
+    name: initialPatient.name || "",
+    birthDate: initialPatient.birthDate || "",
+    age: initialPatient.age || "",
+    status: initialPatient.status || "Triagem inicial",
+    email: initialPatient.email || "",
+    phone: initialPatient.phone || "",
+    treatmentStartDate: initialPatient.treatmentStartDate || "",
+    lastSessionDate:
+      initialPatient.lastSessionDate ||
+      formatBrazilianDateToInput(initialPatient.lastSession),
+    nextSessionDate:
+      initialPatient.nextSessionDate ||
+      formatBrazilianDateToInput(initialPatient.nextSession),
+    mainComplaint: initialPatient.mainComplaint || "",
+    description: initialPatient.description || initialPatient.summary || "",
+    tags: formatListToText(initialPatient.tags),
+    relationships: formatListToText(initialPatient.relationships),
+  }
+}
+
+/**
+ * Modal responsável por criar e editar pacientes.
+ *
+ * A persistência fica fora do modal, no hook usePatientsData.
+ * Assim, o componente permanece focado apenas na experiência do formulário.
+ */
+export function AddPatientModal({
+  isOpen,
+  onClose,
+  onSavePatient,
+  initialPatient = null,
+}) {
   const [formData, setFormData] = useState(initialFormData)
   const [formError, setFormError] = useState("")
 
+  const isEditing = Boolean(initialPatient)
+
   /**
-   * Sempre que o modal abre, o formulário começa limpo.
-   * Isso evita reaproveitar dados digitados em um cadastro anterior.
+   * Sempre que o modal abre, ele decide se deve carregar um paciente existente
+   * ou iniciar um formulário limpo para novo cadastro.
    */
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialFormData)
+      setFormData(getInitialFormData(initialPatient))
       setFormError("")
     }
-  }, [isOpen])
+  }, [isOpen, initialPatient])
 
   const calculatedAge = useMemo(
     () => calculateAgeFromBirthDate(formData.birthDate),
@@ -109,8 +178,8 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
     event.preventDefault()
 
     /**
-     * Nome é obrigatório porque identifica o paciente em toda a navegação.
-     * Os demais campos podem ser preenchidos ou editados posteriormente.
+     * Nome é obrigatório porque identifica o paciente na listagem,
+     * no cabeçalho clínico e nos futuros fluxos de prontuário.
      */
     if (!formData.name.trim()) {
       setFormError("Informe o nome do paciente para continuar.")
@@ -119,7 +188,7 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
 
     const patientAge = calculatedAge || formData.age
 
-    onCreatePatient({
+    onSavePatient({
       name: formData.name,
       birthDate: formData.birthDate,
       age: patientAge,
@@ -135,12 +204,12 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
       description: formData.description,
       tags: parseCommaSeparatedList(formData.tags),
       relationships: parseCommaSeparatedList(formData.relationships),
-      mirror: {
+      mirror: initialPatient?.mirror || {
         centralWound: "",
         mainFear: "",
       },
-      emotionalPatterns: [],
-      medications: [],
+      emotionalPatterns: initialPatient?.emotionalPatterns || [],
+      medications: initialPatient?.medications || [],
     })
 
     onClose()
@@ -152,16 +221,17 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-700">
-              Novo paciente
+              {isEditing ? "Editar paciente" : "Novo paciente"}
             </p>
 
             <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-              Cadastrar paciente
+              {isEditing ? "Atualizar cadastro" : "Cadastrar paciente"}
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
-              Registre os dados iniciais do paciente para criar o prontuário e
-              preparar a timeline clínica do acompanhamento.
+              {isEditing
+                ? "Atualize os dados iniciais do paciente sem alterar sua timeline clínica."
+                : "Registre os dados iniciais do paciente para criar o prontuário e preparar a timeline clínica do acompanhamento."}
             </p>
           </div>
 
@@ -265,9 +335,7 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
 
           <section className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
             <div>
-              <h3 className="text-base font-black text-slate-950">
-                Contato
-              </h3>
+              <h3 className="text-base font-black text-slate-950">Contato</h3>
 
               <p className="mt-1 text-sm text-slate-500">
                 Informações opcionais para referência do profissional.
@@ -454,7 +522,7 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
               type="submit"
               className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
             >
-              Criar paciente
+              {isEditing ? "Salvar alterações" : "Criar paciente"}
             </button>
           </footer>
         </form>

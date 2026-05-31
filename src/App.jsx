@@ -46,11 +46,32 @@ export default function App() {
    * Centraliza os dados de pacientes fora da página visual.
    * Isso prepara o projeto para cadastro, edição e exclusão de pacientes.
    */
-  const { patients, patientStats, createPatient } = usePatientsData()
+  const { patients, patientStats, createPatient, updatePatient } =
+    usePatientsData()
 
   function handleOpenPatient(patient) {
     setSelectedPatient(patient)
     setActivePage("Timeline")
+  }
+
+  /**
+   * Atualiza o paciente na lista e também mantém sincronizado o paciente
+   * aberto na timeline, caso ele seja o mesmo que acabou de ser editado.
+   */
+  function handleUpdatePatient(patientId, updatedPatientData) {
+    updatePatient(patientId, updatedPatientData)
+
+    setSelectedPatient((currentPatient) => {
+      if (!currentPatient || currentPatient.id !== patientId) {
+        return currentPatient
+      }
+
+      return {
+        ...currentPatient,
+        ...updatedPatientData,
+        id: currentPatient.id,
+      }
+    })
   }
 
   function renderActivePage() {
@@ -61,6 +82,7 @@ export default function App() {
           patientStats={patientStats}
           onOpenPatient={handleOpenPatient}
           onCreatePatient={createPatient}
+          onUpdatePatient={handleUpdatePatient}
         />
       )
     }
