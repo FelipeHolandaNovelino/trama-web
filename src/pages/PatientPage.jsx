@@ -20,7 +20,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
   }
 
   /**
-   * Cada paciente precisa ter uma chave própria de timeline.
+   * Cada paciente possui uma timeline própria.
    * O patientId é enviado ao hook para separar a persistência no localStorage.
    */
   const patientTimelineId = patient.id || DEFAULT_PATIENT_ID
@@ -32,7 +32,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
 
   /**
    * Hook central da timeline.
-   * Agora ele recebe o paciente aberto para carregar a timeline correta.
+   * Ele carrega e salva a timeline individual do paciente aberto.
    */
   const {
     timelineData,
@@ -158,6 +158,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
       <div className="mt-6">
         <Timeline
           timelineData={timelineData}
+          onCreateSession={handleOpenAddSession}
           onDeleteBlock={handleDeleteBlock}
           onEditBlock={handleEditBlock}
           onAddBlockToSession={handleAddBlockToSession}

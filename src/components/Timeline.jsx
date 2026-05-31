@@ -5,6 +5,7 @@ import { SessionModal } from "./SessionModal"
 import { MirrorTimeline } from "./MirrorTimeline"
 import { SessionsCalendar } from "./SessionsCalendar"
 import { GroupedBlocksView } from "./GroupedBlocksView"
+import { TimelineEmptyState } from "./TimelineEmptyState"
 import {
   getAllBlocks,
   getAvailableYears,
@@ -38,6 +39,7 @@ const timelineModes = [
 
 export function Timeline({
   timelineData,
+  onCreateSession,
   onDeleteBlock,
   onEditBlock,
   onAddBlockToSession,
@@ -46,7 +48,7 @@ export function Timeline({
 }) {
   /**
    * Lista de anos disponíveis na timeline atual.
-   * Como a timeline agora pode começar vazia, esse valor precisa reagir a novas sessões.
+   * Como pacientes sem seed começam vazios, esse valor pode iniciar sem anos.
    */
   const years = useMemo(() => getAvailableYears(timelineData), [timelineData])
 
@@ -54,18 +56,19 @@ export function Timeline({
   const [selectedSession, setSelectedSession] = useState(null)
   const [selectedMode, setSelectedMode] = useState("chronological")
   const [selectedYear, setSelectedYear] = useState(years[0] || "")
-  const [selectedMonth, setSelectedMonth] = useState("MAR")
+  const [selectedMonth, setSelectedMonth] = useState("JAN")
   const [isYearMenuOpen, setIsYearMenuOpen] = useState(false)
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
 
   /**
    * Quando a timeline começa vazia e a primeira sessão é criada,
-   * o ano selecionado precisa ser atualizado para o novo ano disponível.
+   * o ano selecionado precisa acompanhar o novo dado disponível.
    */
   useEffect(() => {
     if (years.length === 0) {
       setSelectedYear("")
+      setSelectedMonth("JAN")
       return
     }
 
@@ -88,6 +91,8 @@ export function Timeline({
   const allBlocks = useMemo(() => {
     return getAllBlocks(timelineData)
   }, [timelineData])
+
+  const hasTimelineContent = allBlocks.length > 0
 
   /**
    * Índice usado para abrir blocos conectados dentro do modal.
@@ -192,44 +197,50 @@ export function Timeline({
       </header>
 
       <div className="mt-5">
-        {selectedMode === "chronological" && (
-          <SessionsCalendar
-            timelineData={timelineData}
-            selectedYear={selectedYear}
-            selectedMonth={selectedMonth}
-            isYearMenuOpen={isYearMenuOpen}
-            onSelectYear={handleSelectYear}
-            onSelectMonth={setSelectedMonth}
-            onToggleYearMenu={handleToggleYearMenu}
-            onOpenSession={handleOpenSession}
-            onOpenBlock={handleOpenBlock}
-          />
-        )}
+        {!hasTimelineContent ? (
+          <TimelineEmptyState onCreateSession={onCreateSession} />
+        ) : (
+          <>
+            {selectedMode === "chronological" && (
+              <SessionsCalendar
+                timelineData={timelineData}
+                selectedYear={selectedYear}
+                selectedMonth={selectedMonth}
+                isYearMenuOpen={isYearMenuOpen}
+                onSelectYear={handleSelectYear}
+                onSelectMonth={setSelectedMonth}
+                onToggleYearMenu={handleToggleYearMenu}
+                onOpenSession={handleOpenSession}
+                onOpenBlock={handleOpenBlock}
+              />
+            )}
 
-        {selectedMode === "emotional" && (
-          <GroupedBlocksView
-            groupedBlocks={emotionalGroups}
-            emptyTitle="Nenhuma emoção registrada"
-            emptyDescription="As emoções aparecerão aqui quando houver blocos na timeline deste paciente."
-            onOpenConnectedBlock={handleOpenConnectedBlock}
-            onDeleteBlock={onDeleteBlock}
-            onEditBlock={onEditBlock}
-          />
-        )}
+            {selectedMode === "emotional" && (
+              <GroupedBlocksView
+                groupedBlocks={emotionalGroups}
+                emptyTitle="Nenhuma emoção registrada"
+                emptyDescription="As emoções aparecerão aqui quando houver blocos na timeline deste paciente."
+                onOpenConnectedBlock={handleOpenConnectedBlock}
+                onDeleteBlock={onDeleteBlock}
+                onEditBlock={onEditBlock}
+              />
+            )}
 
-        {selectedMode === "relational" && (
-          <GroupedBlocksView
-            groupedBlocks={relationalGroups}
-            emptyTitle="Nenhuma relação registrada"
-            emptyDescription="As pessoas importantes aparecerão aqui quando houver blocos na timeline deste paciente."
-            onOpenConnectedBlock={handleOpenConnectedBlock}
-            onDeleteBlock={onDeleteBlock}
-            onEditBlock={onEditBlock}
-          />
-        )}
+            {selectedMode === "relational" && (
+              <GroupedBlocksView
+                groupedBlocks={relationalGroups}
+                emptyTitle="Nenhuma relação registrada"
+                emptyDescription="As pessoas importantes aparecerão aqui quando houver blocos na timeline deste paciente."
+                onOpenConnectedBlock={handleOpenConnectedBlock}
+                onDeleteBlock={onDeleteBlock}
+                onEditBlock={onEditBlock}
+              />
+            )}
 
-        {selectedMode === "mirror" && (
-          <MirrorTimeline blocks={allBlocks} onOpenBlock={handleOpenBlock} />
+            {selectedMode === "mirror" && (
+              <MirrorTimeline blocks={allBlocks} onOpenBlock={handleOpenBlock} />
+            )}
+          </>
         )}
       </div>
 
@@ -251,4 +262,4 @@ export function Timeline({
       />
     </section>
   )
-}
+} 
