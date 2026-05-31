@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { AddPatientModal } from "../components/AddPatientModal"
+import { ConfirmModal } from "../components/ConfirmModal"
 
 /**
  * Gera as iniciais do nome do paciente para uso no avatar textual.
@@ -22,9 +23,11 @@ export function PatientsPage({
   onOpenPatient,
   onCreatePatient,
   onUpdatePatient,
+  onDeletePatient,
 }) {
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false)
   const [editingPatient, setEditingPatient] = useState(null)
+  const [patientToDelete, setPatientToDelete] = useState(null)
 
   /**
    * Os contadores vêm do hook usePatientsData.
@@ -49,6 +52,29 @@ export function PatientsPage({
   function handleClosePatientModal() {
     setEditingPatient(null)
     setIsPatientModalOpen(false)
+  }
+
+  /**
+   * Abre a confirmação antes de excluir.
+   * A exclusão real só acontece quando o usuário confirma no modal.
+   */
+  function handleOpenDeleteConfirmation(patient) {
+    setPatientToDelete(patient)
+  }
+
+  function handleCancelDeleteConfirmation() {
+    setPatientToDelete(null)
+  }
+
+  /**
+   * Confirma a exclusão do paciente selecionado.
+   * A responsabilidade de alterar os dados continua no App/hook.
+   */
+  function handleConfirmDeletePatient() {
+    if (!patientToDelete) return
+
+    onDeletePatient(patientToDelete.id)
+    setPatientToDelete(null)
   }
 
   /**
@@ -122,7 +148,7 @@ export function PatientsPage({
         {patients.map((patient) => (
           <article
             key={patient.id}
-            className="flex min-h-[380px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md"
+            className="flex min-h-[400px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md"
           >
             <div>
               <div className="flex items-start justify-between gap-4">
@@ -189,13 +215,21 @@ export function PatientsPage({
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => handleOpenEditPatientModal(patient)}
                   className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Editar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenDeleteConfirmation(patient)}
+                  className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                >
+                  Excluir
                 </button>
 
                 {/*
@@ -207,7 +241,7 @@ export function PatientsPage({
                   onClick={() => onOpenPatient(patient)}
                   className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800 transition hover:bg-violet-100"
                 >
-                  Abrir paciente
+                  Abrir
                 </button>
               </div>
             </div>
@@ -220,6 +254,19 @@ export function PatientsPage({
         onClose={handleClosePatientModal}
         onSavePatient={handleSavePatient}
         initialPatient={editingPatient}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(patientToDelete)}
+        title="Excluir paciente?"
+        description={`Você está prestes a excluir ${
+          patientToDelete?.name || "este paciente"
+        }. Esta ação removerá o paciente da listagem local.`}
+        confirmLabel="Excluir paciente"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDeletePatient}
+        onCancel={handleCancelDeleteConfirmation}
       />
     </main>
   )
