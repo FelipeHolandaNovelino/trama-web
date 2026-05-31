@@ -5,33 +5,7 @@ import { ConfirmModal } from "../components/ConfirmModal"
 import { PatientCard } from "../components/PatientCard"
 import { PatientsFilters } from "../components/PatientsFilters"
 import { PatientsStats } from "../components/PatientsStats"
-
-/**
- * Normaliza textos para busca.
- * Remove diferença entre maiúsculas/minúsculas e evita erro com valores vazios.
- */
-function normalizeSearchText(value = "") {
-  return String(value).toLowerCase().trim()
-}
-
-/**
- * Converte listas e textos em uma única string pesquisável.
- * Isso permite buscar por tags, relações, queixa, descrição e contato.
- */
-function buildPatientSearchText(patient) {
-  return [
-    patient.name,
-    patient.mainComplaint,
-    patient.description,
-    patient.email,
-    patient.phone,
-    patient.status,
-    ...(patient.tags || []),
-    ...(patient.relationships || []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-}
+import { filterPatients, hasPatientsFilters } from "../utils/patientsUtils"
 
 export function PatientsPage({
   patients = [],
@@ -58,29 +32,15 @@ export function PatientsPage({
   }
 
   /**
-   * Aplica busca textual e filtro por status.
-   * A lista original permanece intacta; apenas a visualização é filtrada.
+   * Aplica busca textual e filtro por status usando a utility de pacientes.
+   * A página continua controlando o estado, mas a regra de filtragem fica fora dela.
    */
-  const filteredPatients = useMemo(() => {
-    const normalizedSearchTerm = normalizeSearchText(searchTerm)
+  const filteredPatients = useMemo(
+    () => filterPatients(patients, searchTerm, statusFilter),
+    [patients, searchTerm, statusFilter]
+  )
 
-    return patients.filter((patient) => {
-      const matchesStatus =
-        statusFilter === "Todos" || patient.status === statusFilter
-
-      const patientSearchText = normalizeSearchText(
-        buildPatientSearchText(patient)
-      )
-
-      const matchesSearch =
-        !normalizedSearchTerm ||
-        patientSearchText.includes(normalizedSearchTerm)
-
-      return matchesStatus && matchesSearch
-    })
-  }, [patients, searchTerm, statusFilter])
-
-  const hasActiveFilters = searchTerm.trim() || statusFilter !== "Todos"
+  const hasActiveFilters = hasPatientsFilters(searchTerm, statusFilter)
 
   function handleOpenCreatePatientModal() {
     setEditingPatient(null)
@@ -179,7 +139,7 @@ export function PatientsPage({
         statusFilter={statusFilter}
         totalPatients={patients.length}
         filteredPatientsCount={filteredPatients.length}
-        hasActiveFilters={Boolean(hasActiveFilters)}
+        hasActiveFilters={hasActiveFilters}
         onSearchChange={setSearchTerm}
         onStatusChange={setStatusFilter}
         onClearFilters={handleClearFilters}
