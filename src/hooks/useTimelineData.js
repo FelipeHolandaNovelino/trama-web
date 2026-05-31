@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { timeline } from "../data/timeline"
-import { getAllBlocks } from "../utils/timelineUtils"
 
+import { getAllBlocks } from "../utils/timelineUtils"
 import {
   addBlockToExistingSession,
   addSessionToTimeline,
@@ -13,52 +12,122 @@ import {
   updateSessionInTimeline,
 } from "../utils/timelineMutations"
 
-const STORAGE_KEY = "trama_timeline_data"
+const STORAGE_PREFIX = "trama_timeline_data"
+const DEFAULT_PATIENT_ID = "joao-luiz"
 
 /**
- * Carrega a timeline salva localmente.
- * Caso não exista dado salvo ou o JSON esteja inválido, usa a base inicial.
+ * Cria a chave de persistência da timeline para um paciente específico.
+ *
+ * Cada paciente possui sua própria timeline no localStorage.
+ * Isso impede que sessões, blocos e conexões sejam compartilhados entre pacientes.
  */
-function getInitialTimeline() {
-  const savedTimeline = localStorage.getItem(STORAGE_KEY)
+function getTimelineStorageKey(patientId) {
+  return `${STORAGE_PREFIX}_${patientId || DEFAULT_PATIENT_ID}`
+}
+
+/**
+ * Retorna a estrutura inicial da timeline.
+ *
+ * Todos os pacientes começam com timeline vazia.
+ * A timeline demonstrativa antiga não é mais carregada automaticamente.
+ */
+function getEmptyTimeline() {
+  return []
+}
+
+/**
+ * Carrega a timeline salva de um paciente.
+ *
+ * Se não existir dado salvo, o paciente começa com timeline vazia.
+ * Se o dado salvo estiver inválido, o sistema também recomeça vazio.
+ */
+function getInitialTimeline(patientId) {
+  const storageKey = getTimelineStorageKey(patientId)
+  const savedTimeline = localStorage.getItem(storageKey)
 
   if (!savedTimeline) {
-    return timeline
+    return getEmptyTimeline()
   }
 
   try {
-    return JSON.parse(savedTimeline)
+    const parsedTimeline = JSON.parse(savedTimeline)
+
+    return Array.isArray(parsedTimeline) ? parsedTimeline : getEmptyTimeline()
   } catch {
-    return timeline
+    return getEmptyTimeline()
   }
 }
 
 /**
  * Centraliza estado, persistência e ações da timeline.
- * Este hook mantém a página mais limpa e prepara o projeto para trocar
- * o localStorage por uma API no futuro.
+ *
+ * O hook recebe um patientId para garantir que cada paciente tenha sua própria
+ * linha clínica, independente dos demais pacientes cadastrados.
  */
-export function useTimelineData() {
-  const [timelineData, setTimelineData] = useState(getInitialTimeline)
+export function useTimelineData(patientId = DEFAULT_PATIENT_ID) {
+  const safePatientId = patientId || DEFAULT_PATIENT_ID
+
+  const [timelineState, setTimelineState] = useState(() => ({
+    patientId: safePatientId,
+    data: getInitialTimeline(safePatientId),
+  }))
 
   /**
-   * Blocos existentes usados por modais e conexões manuais.
+   * Quando o paciente aberto muda, carregamos a timeline específica dele.
+   * Isso separa completamente os prontuários clínicos no estado local.
+   */
+  useEffect(() => {
+    setTimelineState({
+      patientId: safePatientId,
+      data: getInitialTimeline(safePatientId),
+    })
+  }, [safePatientId])
+
+  const timelineData =
+    timelineState.patientId === safePatientId ? timelineState.data : []
+
+  /**
+   * Blocos existentes usados pelos modais e pelas conexões manuais.
    */
   const existingBlocks = useMemo(() => {
     return getAllBlocks(timelineData)
   }, [timelineData])
 
   /**
-   * Persistência temporária do MVP.
-   * Futuramente, essa responsabilidade pode ser movida para uma camada de API.
+   * Persiste somente a timeline do paciente atualmente aberto.
+   * Cada paciente salva seus dados em uma chave própria no localStorage.
    */
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineData))
-  }, [timelineData])
+    if (timelineState.patientId !== safePatientId) {
+      return
+    }
+
+    const storageKey = getTimelineStorageKey(safePatientId)
+
+    localStorage.setItem(storageKey, JSON.stringify(timelineState.data))
+  }, [safePatientId, timelineState])
+
+  /**
+   * Aplica alterações na timeline do paciente atual.
+   * Centralizar essa atualização evita repetição nas ações de criação, edição e exclusão.
+   */
+  function updateCurrentTimeline(updater) {
+    setTimelineState((currentState) => {
+      const currentData =
+        currentState.patientId === safePatientId
+          ? currentState.data
+          : getInitialTimeline(safePatientId)
+
+      return {
+        patientId: safePatientId,
+        data: updater(currentData),
+      }
+    })
+  }
 
   function saveBlock(blockData, editingBlock = null) {
     if (editingBlock) {
-      setTimelineData((currentTimeline) =>
+      updateCurrentTimeline((currentTimeline) =>
         updateBlockInTimeline(currentTimeline, blockData)
       )
 
@@ -67,7 +136,7 @@ export function useTimelineData() {
 
     const newSession = createSessionFromBlock(blockData)
 
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       addSessionToTimeline(currentTimeline, newSession)
     )
   }
@@ -75,38 +144,48 @@ export function useTimelineData() {
   function saveSession(sessionData) {
     const newSession = createSessionFromBlocks(sessionData)
 
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       addSessionToTimeline(currentTimeline, newSession)
     )
   }
 
   function saveBlockToExistingSession(sessionId, blockData) {
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       addBlockToExistingSession(currentTimeline, sessionId, blockData)
     )
   }
 
   function updateSession(sessionId, updatedSessionData) {
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       updateSessionInTimeline(currentTimeline, sessionId, updatedSessionData)
     )
   }
 
   function deleteBlock(blockId) {
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       removeBlockFromTimeline(currentTimeline, blockId)
     )
   }
 
   function deleteSession(sessionId) {
-    setTimelineData((currentTimeline) =>
+    updateCurrentTimeline((currentTimeline) =>
       removeSessionFromTimeline(currentTimeline, sessionId)
     )
   }
 
+  /**
+   * Limpa a timeline apenas do paciente atual.
+   * Outros pacientes não são afetados.
+   */
   function resetTimeline() {
-    setTimelineData(timeline)
-    localStorage.removeItem(STORAGE_KEY)
+    const storageKey = getTimelineStorageKey(safePatientId)
+
+    localStorage.removeItem(storageKey)
+
+    setTimelineState({
+      patientId: safePatientId,
+      data: getEmptyTimeline(),
+    })
   }
 
   return {

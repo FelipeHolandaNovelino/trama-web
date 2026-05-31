@@ -7,12 +7,23 @@ import { AddSessionModal } from "../components/AddSessionModal"
 import { ConfirmModal } from "../components/ConfirmModal"
 import { useTimelineData } from "../hooks/useTimelineData"
 
+const DEFAULT_PATIENT_ID = "joao-luiz"
+
 export function PatientPage({ selectedPatient, onBackToPatients }) {
   /**
-   * Usa o paciente selecionado pela lista.
-   * Caso a página seja aberta diretamente, mantém o paciente base do projeto.
+   * Usa o paciente selecionado pela listagem.
+   * Caso a timeline seja aberta sem seleção, mantém o paciente base do projeto.
    */
-  const patient = selectedPatient || basePatient
+  const patient = selectedPatient || {
+    ...basePatient,
+    id: DEFAULT_PATIENT_ID,
+  }
+
+  /**
+   * Cada paciente precisa ter uma chave própria de timeline.
+   * O patientId é enviado ao hook para separar a persistência no localStorage.
+   */
+  const patientTimelineId = patient.id || DEFAULT_PATIENT_ID
 
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState(null)
@@ -21,7 +32,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
 
   /**
    * Hook central da timeline.
-   * Ele mantém estado, persistência local e operações de criação/edição/exclusão.
+   * Agora ele recebe o paciente aberto para carregar a timeline correta.
    */
   const {
     timelineData,
@@ -33,7 +44,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
     deleteBlock,
     deleteSession,
     resetTimeline,
-  } = useTimelineData()
+  } = useTimelineData(patientTimelineId)
 
   function handleOpenAddSession() {
     setEditingBlock(null)
@@ -85,7 +96,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
     setConfirmation({
       title: "Excluir bloco?",
       description:
-        "Este bloco será removido da timeline. Conexões que apontam para ele também serão removidas automaticamente.",
+        "Este bloco será removido da timeline deste paciente. Conexões que apontam para ele também serão removidas automaticamente.",
       confirmLabel: "Excluir bloco",
       cancelLabel: "Cancelar",
       variant: "danger",
@@ -101,7 +112,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
     setConfirmation({
       title: "Excluir sessão inteira?",
       description:
-        "Todos os blocos desta sessão serão apagados. Conexões externas que apontam para esses blocos também serão removidas.",
+        "Todos os blocos desta sessão serão apagados da timeline deste paciente. Conexões externas que apontam para esses blocos também serão removidas.",
       confirmLabel: "Excluir sessão",
       cancelLabel: "Cancelar",
       variant: "danger",
@@ -110,14 +121,14 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
   }
 
   /**
-   * Confirma restauração da timeline inicial.
-   * Essa ação apaga os dados salvos localmente no navegador.
+   * Confirma restauração da timeline do paciente atual.
+   * Essa ação não afeta a timeline de outros pacientes.
    */
   function handleResetTimeline() {
     setConfirmation({
-      title: "Restaurar timeline inicial?",
+      title: "Restaurar timeline deste paciente?",
       description:
-        "Os dados criados localmente serão apagados e a timeline voltará para a base inicial do projeto.",
+        "Os dados criados localmente para este paciente serão apagados. Outros pacientes não serão afetados.",
       confirmLabel: "Restaurar timeline",
       cancelLabel: "Cancelar",
       variant: "danger",
@@ -161,7 +172,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
           onClick={handleResetTimeline}
           className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
         >
-          Restaurar timeline inicial
+          Restaurar timeline deste paciente
         </button>
       </footer>
 

@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+
 import { TimelineBlockModal } from "./TimelineBlockModal"
 import { SessionModal } from "./SessionModal"
 import { MirrorTimeline } from "./MirrorTimeline"
 import { SessionsCalendar } from "./SessionsCalendar"
 import { GroupedBlocksView } from "./GroupedBlocksView"
-
 import {
   getAllBlocks,
   getAvailableYears,
@@ -44,7 +44,11 @@ export function Timeline({
   onUpdateSession,
   onDeleteSession,
 }) {
-  const years = getAvailableYears(timelineData)
+  /**
+   * Lista de anos disponíveis na timeline atual.
+   * Como a timeline agora pode começar vazia, esse valor precisa reagir a novas sessões.
+   */
+  const years = useMemo(() => getAvailableYears(timelineData), [timelineData])
 
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
@@ -54,6 +58,29 @@ export function Timeline({
   const [isYearMenuOpen, setIsYearMenuOpen] = useState(false)
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
+
+  /**
+   * Quando a timeline começa vazia e a primeira sessão é criada,
+   * o ano selecionado precisa ser atualizado para o novo ano disponível.
+   */
+  useEffect(() => {
+    if (years.length === 0) {
+      setSelectedYear("")
+      return
+    }
+
+    if (selectedYear && years.includes(selectedYear)) {
+      return
+    }
+
+    const firstAvailableYear = years[0]
+    const firstYearGroup = timelineData.find(
+      (yearGroup) => yearGroup.year === firstAvailableYear
+    )
+
+    setSelectedYear(firstAvailableYear)
+    setSelectedMonth(firstYearGroup?.months?.[0]?.month || "JAN")
+  }, [selectedYear, timelineData, years])
 
   /**
    * Lista única de blocos usada por todas as visões clínicas.
@@ -130,26 +157,26 @@ export function Timeline({
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
+          <h3 className="text-xl font-black text-slate-950">
             Sessões do paciente
           </h3>
 
           <p className="mt-1 text-sm text-slate-500">
-            {currentMode.description}
+            {currentMode?.description}
           </p>
         </div>
 
-        <div className="flex overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <div className="flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {timelineModes.map((mode) => {
             const isActive = selectedMode === mode.id
 
             return (
               <button
-                type="button"
                 key={mode.id}
+                type="button"
                 onClick={() => setSelectedMode(mode.id)}
                 className={`shrink-0 px-4 py-2.5 text-sm transition sm:px-5 ${
                   isActive
@@ -162,47 +189,49 @@ export function Timeline({
             )
           })}
         </div>
+      </header>
+
+      <div className="mt-5">
+        {selectedMode === "chronological" && (
+          <SessionsCalendar
+            timelineData={timelineData}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            isYearMenuOpen={isYearMenuOpen}
+            onSelectYear={handleSelectYear}
+            onSelectMonth={setSelectedMonth}
+            onToggleYearMenu={handleToggleYearMenu}
+            onOpenSession={handleOpenSession}
+            onOpenBlock={handleOpenBlock}
+          />
+        )}
+
+        {selectedMode === "emotional" && (
+          <GroupedBlocksView
+            groupedBlocks={emotionalGroups}
+            emptyTitle="Nenhuma emoção registrada"
+            emptyDescription="As emoções aparecerão aqui quando houver blocos na timeline deste paciente."
+            onOpenConnectedBlock={handleOpenConnectedBlock}
+            onDeleteBlock={onDeleteBlock}
+            onEditBlock={onEditBlock}
+          />
+        )}
+
+        {selectedMode === "relational" && (
+          <GroupedBlocksView
+            groupedBlocks={relationalGroups}
+            emptyTitle="Nenhuma relação registrada"
+            emptyDescription="As pessoas importantes aparecerão aqui quando houver blocos na timeline deste paciente."
+            onOpenConnectedBlock={handleOpenConnectedBlock}
+            onDeleteBlock={onDeleteBlock}
+            onEditBlock={onEditBlock}
+          />
+        )}
+
+        {selectedMode === "mirror" && (
+          <MirrorTimeline blocks={allBlocks} onOpenBlock={handleOpenBlock} />
+        )}
       </div>
-
-      {selectedMode === "chronological" && (
-        <SessionsCalendar
-          timelineData={timelineData}
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          isYearMenuOpen={isYearMenuOpen}
-          onSelectYear={handleSelectYear}
-          onSelectMonth={setSelectedMonth}
-          onToggleYearMenu={handleToggleYearMenu}
-          onOpenSession={handleOpenSession}
-          onOpenBlock={handleOpenBlock}
-        />
-      )}
-
-      {selectedMode === "emotional" && (
-        <GroupedBlocksView
-          groupedBlocks={emotionalGroups}
-          emptyTitle="Nenhuma emoção registrada"
-          emptyDescription="Os blocos aparecerão agrupados aqui quando tiverem emoções associadas."
-          onOpenConnectedBlock={handleOpenConnectedBlock}
-          onDeleteBlock={onDeleteBlock}
-          onEditBlock={onEditBlock}
-        />
-      )}
-
-      {selectedMode === "relational" && (
-        <GroupedBlocksView
-          groupedBlocks={relationalGroups}
-          emptyTitle="Nenhuma relação registrada"
-          emptyDescription="Os blocos aparecerão agrupados aqui quando tiverem pessoas relacionadas."
-          onOpenConnectedBlock={handleOpenConnectedBlock}
-          onDeleteBlock={onDeleteBlock}
-          onEditBlock={onEditBlock}
-        />
-      )}
-
-      {selectedMode === "mirror" && (
-        <MirrorTimeline blocks={allBlocks} onOpenBlock={handleOpenBlock} />
-      )}
 
       <SessionModal
         session={selectedSession}

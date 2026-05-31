@@ -38,13 +38,13 @@ export default function App() {
 
   /**
    * Guarda o paciente aberto a partir da listagem.
-   * Nesta fase, a timeline ainda é compartilhada enquanto não existe backend.
+   * A timeline agora é carregada individualmente pelo id desse paciente.
    */
   const [selectedPatient, setSelectedPatient] = useState(null)
 
   /**
    * Centraliza os dados de pacientes fora da página visual.
-   * Isso prepara o projeto para cadastro, edição e exclusão de pacientes.
+   * Isso mantém cadastro, edição, exclusão e estatísticas em um único hook.
    */
   const {
     patients,
@@ -57,6 +57,10 @@ export default function App() {
   function handleOpenPatient(patient) {
     setSelectedPatient(patient)
     setActivePage("Timeline")
+  }
+
+  function handleBackToPatients() {
+    setActivePage("Pacientes")
   }
 
   /**
@@ -110,7 +114,12 @@ export default function App() {
     }
 
     if (activePage === "Timeline") {
-      return <PatientPage selectedPatient={selectedPatient} />
+      return (
+        <PatientPage
+          selectedPatient={selectedPatient}
+          onBackToPatients={handleBackToPatients}
+        />
+      )
     }
 
     if (activePage === "Sessões") {
