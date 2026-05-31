@@ -2,7 +2,7 @@
 
 **Trama** é um protótipo de sistema web para psicólogos acompanharem a história clínica e emocional de seus pacientes de forma visual, cronológica e conectada.
 
-A proposta do projeto é ir além de um prontuário tradicional, permitindo que o profissional visualize sessões, acontecimentos, emoções, relações importantes, padrões e conexões entre eventos relatados pelo paciente.
+A proposta do projeto é ir além de um prontuário tradicional, permitindo que o profissional visualize pacientes, sessões, acontecimentos, emoções, relações importantes, padrões e conexões entre eventos relatados durante o acompanhamento clínico.
 
 ---
 
@@ -10,8 +10,9 @@ A proposta do projeto é ir além de um prontuário tradicional, permitindo que 
 
 O objetivo do Trama é ajudar psicólogos autônomos, especialmente profissionais que atendem pacientes de forma individual, a construir uma visão mais clara da trajetória emocional de cada paciente.
 
-O sistema organiza informações clínicas em diferentes modos de visualização:
+O sistema organiza informações clínicas em diferentes áreas e modos de visualização:
 
+- **Pacientes**: lista, cadastro, edição, exclusão, busca e filtros.
 - **Sessões**: visão em formato de calendário clínico, organizada pela data dos atendimentos.
 - **Emoções**: blocos agrupados pelas emoções associadas aos acontecimentos.
 - **Relações**: blocos agrupados pelas pessoas importantes na vida do paciente.
@@ -21,21 +22,37 @@ O sistema organiza informações clínicas em diferentes modos de visualização
 
 ## Conceito principal
 
-No Trama, uma sessão pode conter vários blocos de eventos.
+No Trama, um paciente possui uma linha clínica composta por sessões.
 
-Isso permite que, em um único atendimento, o psicólogo registre diferentes acontecimentos, emoções, pessoas envolvidas, padrões e conexões clínicas.
+Cada sessão pode conter vários blocos de eventos. Isso permite que, em um único atendimento, o psicólogo registre diferentes acontecimentos, emoções, pessoas envolvidas, padrões e conexões clínicas.
 
 Exemplo:
 
 ```txt
-Sessão do dia 10/03/2026
-├─ Bloco 1: conflito com a mãe
-├─ Bloco 2: ansiedade no trabalho
-├─ Bloco 3: lembrança de abandono na infância
-└─ Bloco 4: insight sobre autocobrança
+Paciente: Ana Luiza
+└─ Sessão do dia 10/03/2026
+   ├─ Bloco 1: conflito com a mãe
+   ├─ Bloco 2: ansiedade no trabalho
+   ├─ Bloco 3: lembrança de abandono na infância
+   └─ Bloco 4: insight sobre autocobrança
 ```
 
-Cada bloco pode ter:
+Cada paciente pode ter:
+
+- nome;
+- idade;
+- data de nascimento;
+- status;
+- contato;
+- início do acompanhamento;
+- última sessão;
+- próxima sessão;
+- queixa principal;
+- descrição inicial;
+- tags clínicas;
+- pessoas importantes.
+
+Cada bloco de evento pode ter:
 
 - título;
 - texto narrativo;
@@ -52,11 +69,40 @@ Cada bloco pode ter:
 
 ## Funcionalidades atuais
 
-### Paciente
+### Pacientes
+
+- Listagem de pacientes.
+- Cadastro de novo paciente.
+- Modal robusto de criação de paciente.
+- Edição de paciente usando o mesmo modal de cadastro.
+- Exclusão de paciente com modal de confirmação.
+- Busca por:
+  - nome;
+  - queixa principal;
+  - descrição;
+  - tags;
+  - relações importantes;
+  - e-mail;
+  - telefone;
+  - status.
+- Filtro por status:
+  - Todos;
+  - Triagem inicial;
+  - Em acompanhamento;
+  - Encerrado.
+- Cards de estatísticas:
+  - total de pacientes;
+  - pacientes em acompanhamento;
+  - pacientes em triagem inicial.
+- Estado vazio quando nenhum paciente é encontrado.
+- Persistência dos pacientes no `localStorage`.
+
+### Paciente selecionado
 
 - Exibição de dados resumidos do paciente.
 - Cabeçalho compacto e responsivo.
 - Botão para criar nova sessão.
+- Dados do paciente selecionado refletidos no cabeçalho da timeline.
 
 ### Sessões
 
@@ -94,6 +140,7 @@ Cada bloco pode ter:
 
 O sistema possui um modal próprio de confirmação para ações críticas:
 
+- excluir paciente;
 - excluir bloco;
 - excluir sessão;
 - restaurar timeline inicial.
@@ -102,9 +149,9 @@ Isso substitui o `confirm()` padrão do navegador e mantém a experiência visua
 
 ---
 
-## Modos de visualização
+## Modos de visualização da timeline
 
-O sistema possui quatro modos principais:
+O sistema possui quatro modos principais dentro da timeline do paciente:
 
 ```txt
 Sessões | Emoções | Relações | Espelho
@@ -142,11 +189,15 @@ O Espelho também exibe:
 ```txt
 src/
 ├─ components/
+│  ├─ AddPatientModal.jsx
 │  ├─ AddSessionModal.jsx
 │  ├─ ConfirmModal.jsx
 │  ├─ GroupedBlocksView.jsx
 │  ├─ MirrorTimeline.jsx
+│  ├─ PatientCard.jsx
 │  ├─ PatientHeader.jsx
+│  ├─ PatientsFilters.jsx
+│  ├─ PatientsStats.jsx
 │  ├─ SessionModal.jsx
 │  ├─ SessionsCalendar.jsx
 │  ├─ Sidebar.jsx
@@ -156,15 +207,20 @@ src/
 │
 ├─ data/
 │  ├─ patient.js
+│  ├─ patients.js
+│  ├─ sessionOptions.js
 │  └─ timeline.js
 │
 ├─ hooks/
+│  ├─ usePatientsData.js
 │  └─ useTimelineData.js
 │
 ├─ pages/
-│  └─ PatientPage.jsx
+│  ├─ PatientPage.jsx
+│  └─ PatientsPage.jsx
 │
 ├─ utils/
+│  ├─ patientsUtils.js
 │  ├─ timelineMutations.js
 │  └─ timelineUtils.js
 │
@@ -176,11 +232,26 @@ src/
 
 ## Arquitetura atual
 
-O projeto foi organizado para separar responsabilidades entre página, componentes visuais, hook de dados, funções utilitárias e funções de mutação.
+O projeto foi organizado para separar responsabilidades entre páginas, componentes visuais, hooks de dados, funções utilitárias e funções de mutação.
 
 ```txt
+App.jsx
+→ controla a navegação principal entre abas e mantém o paciente selecionado
+
+Sidebar.jsx
+→ renderiza a navegação principal do sistema
+
+PatientsPage.jsx
+→ controla a página de pacientes, busca, filtros, modais e confirmação
+
+usePatientsData.js
+→ controla estado, persistência e ações de pacientes
+
+patientsUtils.js
+→ centraliza busca, normalização e filtros de pacientes
+
 PatientPage.jsx
-→ controla a tela do paciente e os modais principais
+→ controla a tela clínica do paciente e os modais principais da timeline
 
 useTimelineData.js
 → controla estado, persistência e ações da timeline
@@ -189,10 +260,10 @@ timelineMutations.js
 → altera a estrutura da timeline
 
 timelineUtils.js
-→ lê, agrupa, formata e calcula dados
+→ lê, agrupa, formata e calcula dados da timeline
 
 Timeline.jsx
-→ controla abas, modais de sessão/bloco e distribuição das visões
+→ controla modos, modais de sessão/bloco e distribuição das visões
 
 SessionsCalendar.jsx
 → renderiza a visão de sessões em calendário
@@ -208,9 +279,143 @@ MirrorTimeline.jsx
 
 ## Responsabilidades dos principais arquivos
 
+### `App.jsx`
+
+Controla a estrutura principal do sistema.
+
+Responsabilidades:
+
+- manter a aba ativa da navegação;
+- renderizar a página correta conforme a aba selecionada;
+- manter o paciente selecionado;
+- conectar ações de pacientes com `usePatientsData`;
+- sincronizar alterações do paciente selecionado com a timeline.
+
+---
+
+### `Sidebar.jsx`
+
+Renderiza a navegação principal.
+
+Responsabilidades:
+
+- exibir abas principais do sistema;
+- indicar a aba ativa;
+- permitir troca entre Pacientes, Timeline e demais áreas futuras.
+
+---
+
+### `PatientsPage.jsx`
+
+Controla a página de pacientes.
+
+Responsabilidades:
+
+- renderizar cabeçalho da listagem;
+- controlar abertura e fechamento do modal de paciente;
+- controlar paciente em edição;
+- controlar paciente em exclusão;
+- aplicar busca e filtro;
+- renderizar lista filtrada;
+- exibir estado vazio;
+- conectar criação, edição e exclusão com o hook de pacientes.
+
+---
+
+### `usePatientsData.js`
+
+Hook responsável por centralizar os dados dos pacientes.
+
+Responsabilidades:
+
+- carregar pacientes do `localStorage`;
+- salvar pacientes no `localStorage`;
+- criar paciente;
+- editar paciente;
+- excluir paciente;
+- restaurar lista inicial;
+- calcular estatísticas da listagem;
+- normalizar dados para manter compatibilidade entre pacientes antigos e novos.
+
+Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/backend.
+
+---
+
+### `patientsUtils.js`
+
+Centraliza funções utilitárias da área de pacientes.
+
+Inclui funções para:
+
+- normalizar texto de busca;
+- remover diferenças de acento e caixa;
+- montar texto pesquisável do paciente;
+- filtrar pacientes por busca e status;
+- identificar se há filtros ativos.
+
+---
+
+### `AddPatientModal.jsx`
+
+Renderiza o modal de criação e edição de pacientes.
+
+Responsabilidades:
+
+- coletar dados básicos do paciente;
+- calcular idade a partir da data de nascimento;
+- registrar contato;
+- registrar datas clínicas;
+- registrar queixa principal;
+- registrar descrição inicial;
+- registrar tags clínicas;
+- registrar pessoas importantes;
+- validar nome obrigatório;
+- funcionar tanto em modo criação quanto em modo edição.
+
+---
+
+### `PatientCard.jsx`
+
+Renderiza o card individual de paciente.
+
+Responsabilidades:
+
+- exibir nome, idade, status e resumo clínico;
+- exibir tags principais;
+- exibir última e próxima sessão;
+- disparar ações de editar, excluir e abrir paciente.
+
+---
+
+### `PatientsFilters.jsx`
+
+Renderiza os controles de busca e filtro.
+
+Responsabilidades:
+
+- exibir campo de busca;
+- exibir filtro por status;
+- exibir contador de pacientes filtrados;
+- indicar filtros ativos;
+- permitir limpar filtros.
+
+---
+
+### `PatientsStats.jsx`
+
+Renderiza os cards de estatísticas da lista de pacientes.
+
+Responsabilidades:
+
+- exibir total de pacientes;
+- exibir pacientes em acompanhamento;
+- exibir pacientes em triagem inicial.
+
+---
+
 ### `PatientPage.jsx`
 
-Controla a página principal do paciente.
+Controla a página clínica do paciente.
 
 Responsabilidades:
 
@@ -219,6 +424,20 @@ Responsabilidades:
 - abrir e fechar modal de criação de sessão/bloco;
 - abrir modal de confirmação;
 - conectar ações da interface com o hook `useTimelineData`.
+
+---
+
+### `PatientHeader.jsx`
+
+Renderiza o cabeçalho do paciente selecionado.
+
+Responsabilidades:
+
+- exibir dados resumidos do paciente;
+- exibir tags;
+- exibir queixa/contexto clínico;
+- exibir botão de edição futura;
+- exibir botão para criar nova sessão.
 
 ---
 
@@ -246,7 +465,7 @@ Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/
 
 ### `Timeline.jsx`
 
-Controla as abas principais da timeline.
+Controla os modos principais da timeline.
 
 Responsabilidades:
 
@@ -312,6 +531,7 @@ Renderiza um modal de confirmação reutilizável.
 
 Atualmente usado para:
 
+- confirmar exclusão de paciente;
 - confirmar exclusão de bloco;
 - confirmar exclusão de sessão;
 - confirmar restauração da timeline inicial.
@@ -390,9 +610,17 @@ http://localhost:5173
 
 ## Persistência dos dados
 
-Neste momento, o projeto usa `localStorage` para persistir os dados da timeline no navegador.
+Neste momento, o projeto usa `localStorage` para persistir dados no navegador.
 
-Isso permite testar criação, edição e exclusão de sessões e blocos sem backend.
+Dados persistidos atualmente:
+
+- lista de pacientes;
+- timeline;
+- sessões;
+- blocos;
+- conexões.
+
+Isso permite testar criação, edição, exclusão, filtros e navegação sem backend.
 
 Futuramente, essa camada deve ser substituída por uma API com banco de dados.
 
@@ -402,7 +630,16 @@ Futuramente, essa camada deve ser substituída por uma API com banco de dados.
 
 O projeto atualmente possui uma base funcional para:
 
-- visualizar paciente;
+- navegar entre abas principais;
+- listar pacientes;
+- cadastrar pacientes;
+- editar pacientes;
+- excluir pacientes com confirmação;
+- buscar pacientes;
+- filtrar pacientes por status;
+- persistir pacientes localmente;
+- abrir paciente na timeline;
+- visualizar paciente selecionado;
 - criar sessões;
 - criar múltiplos blocos por sessão;
 - adicionar blocos em sessões existentes;
@@ -413,7 +650,7 @@ O projeto atualmente possui uma base funcional para:
 - criar conexões entre blocos;
 - visualizar dados por sessão, emoção, relação e espelho;
 - confirmar ações críticas com modal próprio;
-- persistir dados localmente.
+- persistir dados clínicos localmente.
 
 ---
 
@@ -421,18 +658,20 @@ O projeto atualmente possui uma base funcional para:
 
 ### Curto prazo
 
+- Separar componentes restantes da área de pacientes, se necessário.
+- Melhorar responsividade da aba Pacientes.
+- Adicionar edição do paciente diretamente pelo cabeçalho clínico.
+- Criar vínculo real entre paciente e timeline individual.
 - Melhorar modal de criação de sessão/bloco.
-- Melhorar edição do paciente.
-- Adicionar busca/filtros por emoção, pessoa e tag.
-- Criar tela de listagem de pacientes.
+- Adicionar busca/filtros por emoção, pessoa e tag dentro da timeline.
 - Melhorar o design dos modais.
-- Revisar responsividade geral.
 
 ### Médio prazo
 
-- Criar cadastro real de pacientes.
+- Criar prontuário individual por paciente.
 - Criar painel de padrões emocionais.
 - Criar tela de tags e conexões.
+- Criar visão geral de sessões.
 - Criar relatórios clínicos.
 - Adicionar autenticação.
 - Integrar backend.
@@ -443,6 +682,7 @@ O projeto atualmente possui uma base funcional para:
 - Implementar segurança e LGPD.
 - Criar permissões por profissional.
 - Criar exportação de relatórios.
+- Criar backup seguro.
 - Avaliar recursos com IA de apoio clínico, sempre mantendo o psicólogo no controle.
 
 ---
@@ -471,6 +711,10 @@ Dados clínicos são altamente sensíveis e exigem cuidado técnico, ético e le
 Projeto em desenvolvimento.
 
 O foco atual é construir um MVP funcional, organizado e apresentável como projeto de portfólio.
+
+A área de pacientes já possui um CRUD local funcional com persistência em `localStorage`.
+
+A área de timeline já permite registrar sessões, blocos, emoções, relações, conexões e espelho clínico.
 
 ---
 
