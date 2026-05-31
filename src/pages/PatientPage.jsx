@@ -1,59 +1,26 @@
-import { useEffect, useMemo, useState } from "react"
-import { timeline } from "../data/timeline"
+import { useState } from "react"
 import { patient } from "../data/patient"
 import { PatientHeader } from "../components/PatientHeader"
 import { Timeline } from "../components/Timeline"
 import { AddSessionModal } from "../components/AddSessionModal"
-
-import { getAllBlocks } from "../utils/timelineUtils"
-
-import {
-  addBlockToExistingSession,
-  addSessionToTimeline,
-  createSessionFromBlock,
-  createSessionFromBlocks,
-  removeBlockFromTimeline,
-  removeSessionFromTimeline,
-  updateBlockInTimeline,
-  updateSessionInTimeline,
-} from "../utils/timelineMutations"
-
-const STORAGE_KEY = "trama_timeline_data"
-
-function getInitialTimeline() {
-  const savedTimeline = localStorage.getItem(STORAGE_KEY)
-
-  if (!savedTimeline) {
-    return timeline
-  }
-
-  try {
-    return JSON.parse(savedTimeline)
-  } catch {
-    return timeline
-  }
-}
+import { useTimelineData } from "../hooks/useTimelineData"
 
 export function PatientPage() {
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState(null)
   const [targetSession, setTargetSession] = useState(null)
-  const [timelineData, setTimelineData] = useState(getInitialTimeline)
 
-  /**
-   * Lista usada pelo modal para criar conexões entre blocos existentes.
-   */
-  const existingBlocks = useMemo(() => {
-    return getAllBlocks(timelineData)
-  }, [timelineData])
-
-  /**
-   * Persistência local temporária do MVP.
-   * Futuramente, essa camada será substituída por API/backend.
-   */
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(timelineData))
-  }, [timelineData])
+  const {
+    timelineData,
+    existingBlocks,
+    saveBlock,
+    saveSession,
+    saveBlockToExistingSession,
+    updateSession,
+    deleteBlock,
+    deleteSession,
+    resetTimeline,
+  } = useTimelineData()
 
   function handleOpenAddSession() {
     setEditingBlock(null)
@@ -80,42 +47,21 @@ export function PatientPage() {
   }
 
   function handleSaveBlock(blockData) {
-    if (editingBlock) {
-      setTimelineData((currentTimeline) =>
-        updateBlockInTimeline(currentTimeline, blockData)
-      )
-
-      setEditingBlock(null)
-      return
-    }
-
-    const newSession = createSessionFromBlock(blockData)
-
-    setTimelineData((currentTimeline) =>
-      addSessionToTimeline(currentTimeline, newSession)
-    )
+    saveBlock(blockData, editingBlock)
+    setEditingBlock(null)
   }
 
   function handleSaveSession(sessionData) {
-    const newSession = createSessionFromBlocks(sessionData)
-
-    setTimelineData((currentTimeline) =>
-      addSessionToTimeline(currentTimeline, newSession)
-    )
+    saveSession(sessionData)
   }
 
   function handleSaveBlockToExistingSession(sessionId, blockData) {
-    setTimelineData((currentTimeline) =>
-      addBlockToExistingSession(currentTimeline, sessionId, blockData)
-    )
-
+    saveBlockToExistingSession(sessionId, blockData)
     setTargetSession(null)
   }
 
   function handleUpdateSession(sessionId, updatedSessionData) {
-    setTimelineData((currentTimeline) =>
-      updateSessionInTimeline(currentTimeline, sessionId, updatedSessionData)
-    )
+    updateSession(sessionId, updatedSessionData)
   }
 
   function handleDeleteBlock(blockId) {
@@ -123,9 +69,7 @@ export function PatientPage() {
 
     if (!confirmed) return
 
-    setTimelineData((currentTimeline) =>
-      removeBlockFromTimeline(currentTimeline, blockId)
-    )
+    deleteBlock(blockId)
   }
 
   function handleDeleteSession(sessionId) {
@@ -135,9 +79,7 @@ export function PatientPage() {
 
     if (!confirmed) return
 
-    setTimelineData((currentTimeline) =>
-      removeSessionFromTimeline(currentTimeline, sessionId)
-    )
+    deleteSession(sessionId)
   }
 
   function handleResetTimeline() {
@@ -147,8 +89,7 @@ export function PatientPage() {
 
     if (!confirmed) return
 
-    setTimelineData(timeline)
-    localStorage.removeItem(STORAGE_KEY)
+    resetTimeline()
   }
 
   return (
