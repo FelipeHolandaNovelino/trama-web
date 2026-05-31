@@ -1,6 +1,6 @@
 # Trama
 
-**Trama** é um protótipo de sistema web para psicólogos acompanharem a história clínica e emocional de seus pacientes de forma mais visual, cronológica e conectada.
+**Trama** é um protótipo de sistema web para psicólogos acompanharem a história clínica e emocional de seus pacientes de forma visual, cronológica e conectada.
 
 A proposta do projeto é ir além de um prontuário tradicional, permitindo que o profissional visualize sessões, acontecimentos, emoções, relações importantes, padrões e conexões entre eventos relatados pelo paciente.
 
@@ -70,7 +70,7 @@ Cada bloco pode ter:
   - mês aberto.
 - Abertura de sessão em modal.
 - Edição dos dados da sessão.
-- Exclusão de sessão inteira com confirmação.
+- Exclusão de sessão inteira com modal de confirmação.
 - Adição de novos blocos em sessão existente.
 
 ### Blocos de eventos
@@ -78,7 +78,7 @@ Cada bloco pode ter:
 - Criação de blocos dentro de uma sessão.
 - Criação de múltiplos blocos em uma única sessão.
 - Edição de blocos.
-- Exclusão de blocos com confirmação.
+- Exclusão de blocos com modal de confirmação.
 - Visualização compacta dos blocos.
 - Abertura de bloco em modal.
 - Exibição de emoções, pessoas, tags e intensidade emocional.
@@ -90,7 +90,19 @@ Cada bloco pode ter:
 - Abertura de blocos conectados dentro do modal.
 - Remoção automática de conexões inválidas ao excluir blocos ou sessões.
 
-### Modos de visualização
+### Confirmações
+
+O sistema possui um modal próprio de confirmação para ações críticas:
+
+- excluir bloco;
+- excluir sessão;
+- restaurar timeline inicial.
+
+Isso substitui o `confirm()` padrão do navegador e mantém a experiência visual dentro do padrão do Trama.
+
+---
+
+## Modos de visualização
 
 O sistema possui quatro modos principais:
 
@@ -98,19 +110,19 @@ O sistema possui quatro modos principais:
 Sessões | Emoções | Relações | Espelho
 ```
 
-#### Sessões
+### Sessões
 
 Organiza os registros pela data do atendimento clínico.
 
-#### Emoções
+### Emoções
 
 Agrupa os blocos pelas emoções associadas.
 
-#### Relações
+### Relações
 
 Agrupa os blocos pelas pessoas envolvidas.
 
-#### Espelho
+### Espelho
 
 Mostra a linha da vida emocional do paciente, organizada pela data real dos acontecimentos, não pela data em que foram relatados.
 
@@ -131,6 +143,7 @@ O Espelho também exibe:
 src/
 ├─ components/
 │  ├─ AddSessionModal.jsx
+│  ├─ ConfirmModal.jsx
 │  ├─ GroupedBlocksView.jsx
 │  ├─ MirrorTimeline.jsx
 │  ├─ PatientHeader.jsx
@@ -145,6 +158,9 @@ src/
 │  ├─ patient.js
 │  └─ timeline.js
 │
+├─ hooks/
+│  └─ useTimelineData.js
+│
 ├─ pages/
 │  └─ PatientPage.jsx
 │
@@ -158,20 +174,73 @@ src/
 
 ---
 
+## Arquitetura atual
+
+O projeto foi organizado para separar responsabilidades entre página, componentes visuais, hook de dados, funções utilitárias e funções de mutação.
+
+```txt
+PatientPage.jsx
+→ controla a tela do paciente e os modais principais
+
+useTimelineData.js
+→ controla estado, persistência e ações da timeline
+
+timelineMutations.js
+→ altera a estrutura da timeline
+
+timelineUtils.js
+→ lê, agrupa, formata e calcula dados
+
+Timeline.jsx
+→ controla abas, modais de sessão/bloco e distribuição das visões
+
+SessionsCalendar.jsx
+→ renderiza a visão de sessões em calendário
+
+GroupedBlocksView.jsx
+→ renderiza agrupamentos de Emoções e Relações
+
+MirrorTimeline.jsx
+→ renderiza o Espelho conectado do paciente
+```
+
+---
+
 ## Responsabilidades dos principais arquivos
 
 ### `PatientPage.jsx`
 
-Controla o estado principal da página do paciente.
+Controla a página principal do paciente.
 
 Responsabilidades:
 
-- carregar os dados da timeline;
-- abrir e fechar modais;
-- iniciar criação de sessão;
-- iniciar edição de bloco;
-- chamar ações de criação, edição e exclusão;
-- renderizar cabeçalho, timeline e modal de criação.
+- renderizar cabeçalho do paciente;
+- renderizar timeline;
+- abrir e fechar modal de criação de sessão/bloco;
+- abrir modal de confirmação;
+- conectar ações da interface com o hook `useTimelineData`.
+
+---
+
+### `useTimelineData.js`
+
+Hook responsável por centralizar os dados da timeline.
+
+Responsabilidades:
+
+- carregar dados do `localStorage`;
+- salvar dados no `localStorage`;
+- fornecer blocos existentes para conexões;
+- criar sessão;
+- criar bloco;
+- adicionar bloco em sessão existente;
+- editar sessão;
+- editar bloco;
+- excluir sessão;
+- excluir bloco;
+- restaurar timeline inicial.
+
+Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/backend.
 
 ---
 
@@ -234,6 +303,18 @@ Responsabilidades:
 - mostrar blocos conectados;
 - exibir contadores do Espelho;
 - filtrar apenas acontecimentos conectados.
+
+---
+
+### `ConfirmModal.jsx`
+
+Renderiza um modal de confirmação reutilizável.
+
+Atualmente usado para:
+
+- confirmar exclusão de bloco;
+- confirmar exclusão de sessão;
+- confirmar restauração da timeline inicial.
 
 ---
 
@@ -331,6 +412,7 @@ O projeto atualmente possui uma base funcional para:
 - excluir blocos;
 - criar conexões entre blocos;
 - visualizar dados por sessão, emoção, relação e espelho;
+- confirmar ações críticas com modal próprio;
 - persistir dados localmente.
 
 ---
@@ -339,16 +421,15 @@ O projeto atualmente possui uma base funcional para:
 
 ### Curto prazo
 
-- Criar hook `useTimelineData`.
-- Melhorar modal de confirmação de exclusão.
+- Melhorar modal de criação de sessão/bloco.
 - Melhorar edição do paciente.
 - Adicionar busca/filtros por emoção, pessoa e tag.
+- Criar tela de listagem de pacientes.
 - Melhorar o design dos modais.
 - Revisar responsividade geral.
 
 ### Médio prazo
 
-- Criar tela de listagem de pacientes.
 - Criar cadastro real de pacientes.
 - Criar painel de padrões emocionais.
 - Criar tela de tags e conexões.
