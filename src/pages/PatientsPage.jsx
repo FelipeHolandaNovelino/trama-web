@@ -1,3 +1,7 @@
+import { useState } from "react"
+
+import { AddPatientModal } from "../components/AddPatientModal"
+
 /**
  * Gera as iniciais do nome do paciente para uso no avatar textual.
  * Essa solução evita depender de imagens enquanto o cadastro real não existe.
@@ -12,7 +16,14 @@ function getInitials(name = "") {
     .toUpperCase()
 }
 
-export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
+export function PatientsPage({
+  patients = [],
+  patientStats,
+  onOpenPatient,
+  onCreatePatient,
+}) {
+  const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false)
+
   /**
    * Os contadores vêm do hook usePatientsData.
    * Caso a página seja usada isoladamente no futuro, o fallback evita erro visual.
@@ -21,6 +32,14 @@ export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
     total: patients.length,
     active: 0,
     screening: 0,
+  }
+
+  function handleOpenAddPatientModal() {
+    setIsAddPatientModalOpen(true)
+  }
+
+  function handleCloseAddPatientModal() {
+    setIsAddPatientModalOpen(false)
   }
 
   return (
@@ -42,12 +61,9 @@ export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
             </p>
           </div>
 
-          {/*
-            O botão ainda não abre modal nesta etapa.
-            No próximo passo, ele será conectado ao AddPatientModal.
-          */}
           <button
             type="button"
+            onClick={handleOpenAddPatientModal}
             className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
           >
             + Novo paciente
@@ -97,7 +113,9 @@ export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
                     </h3>
 
                     <p className="text-sm text-slate-500">
-                      {patient.age ? `${patient.age} anos` : "Idade não informada"}
+                      {patient.age
+                        ? `${patient.age} anos`
+                        : "Idade não informada"}
                     </p>
                   </div>
                 </div>
@@ -114,7 +132,8 @@ export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
               )}
 
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
-                {patient.description || "Paciente sem descrição clínica inicial."}
+                {patient.description ||
+                  "Paciente sem descrição clínica inicial."}
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -161,6 +180,12 @@ export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
           </article>
         ))}
       </section>
+
+      <AddPatientModal
+        isOpen={isAddPatientModalOpen}
+        onClose={handleCloseAddPatientModal}
+        onCreatePatient={onCreatePatient}
+      />
     </main>
   )
 }

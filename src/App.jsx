@@ -46,7 +46,7 @@ export default function App() {
    * Centraliza os dados de pacientes fora da página visual.
    * Isso prepara o projeto para cadastro, edição e exclusão de pacientes.
    */
-  const { patients, patientStats } = usePatientsData()
+  const { patients, patientStats, createPatient } = usePatientsData()
 
   function handleOpenPatient(patient) {
     setSelectedPatient(patient)
@@ -60,6 +60,7 @@ export default function App() {
           patients={patients}
           patientStats={patientStats}
           onOpenPatient={handleOpenPatient}
+          onCreatePatient={createPatient}
         />
       )
     }
@@ -119,4 +120,4 @@ export default function App() {
       {renderActivePage()}
     </div>
   )
-} 
+}
