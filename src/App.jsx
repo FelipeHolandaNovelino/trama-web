@@ -3,10 +3,11 @@ import { useState } from "react"
 import { Sidebar } from "./components/Sidebar"
 import { PatientPage } from "./pages/PatientPage"
 import { PatientsPage } from "./pages/PatientsPage"
+import { usePatientsData } from "./hooks/usePatientsData"
 
 /**
  * Página temporária para abas que ainda não possuem uma tela própria.
- * Mantém a navegação funcional sem quebrar o fluxo principal do projeto.
+ * Mantém a navegação funcional enquanto o MVP evolui por partes.
  */
 function EmptyPage({ title, description }) {
   return (
@@ -36,27 +37,31 @@ export default function App() {
   const [activePage, setActivePage] = useState("Timeline")
 
   /**
-   * Guarda o paciente selecionado na listagem.
-   * Por enquanto, todos ainda compartilham a mesma timeline local.
+   * Guarda o paciente aberto a partir da listagem.
+   * Nesta fase, a timeline ainda é compartilhada enquanto não existe backend.
    */
   const [selectedPatient, setSelectedPatient] = useState(null)
 
   /**
-   * Ao abrir um paciente pela listagem, o usuário é levado para a tela clínica.
-   * Isso evita que a lista de pacientes apareça dentro da timeline.
+   * Centraliza os dados de pacientes fora da página visual.
+   * Isso prepara o projeto para cadastro, edição e exclusão de pacientes.
    */
+  const { patients, patientStats } = usePatientsData()
+
   function handleOpenPatient(patient) {
     setSelectedPatient(patient)
     setActivePage("Timeline")
   }
 
-  /**
-   * Define qual conteúdo deve aparecer abaixo da navegação.
-   * Apenas a aba "Pacientes" renderiza a lista de pacientes.
-   */
   function renderActivePage() {
     if (activePage === "Pacientes") {
-      return <PatientsPage onOpenPatient={handleOpenPatient} />
+      return (
+        <PatientsPage
+          patients={patients}
+          patientStats={patientStats}
+          onOpenPatient={handleOpenPatient}
+        />
+      )
     }
 
     if (activePage === "Timeline") {
@@ -114,4 +119,4 @@ export default function App() {
       {renderActivePage()}
     </div>
   )
-}
+} 

@@ -1,30 +1,27 @@
-import { patients } from "../data/patients"
-
 /**
  * Gera as iniciais do nome do paciente para uso no avatar textual.
  * Essa solução evita depender de imagens enquanto o cadastro real não existe.
  */
-function getInitials(name) {
+function getInitials(name = "") {
   return name
     .split(" ")
+    .filter(Boolean)
     .map((word) => word[0])
     .join("")
     .slice(0, 2)
     .toUpperCase()
 }
 
-export function PatientsPage({ onOpenPatient }) {
+export function PatientsPage({ patients = [], patientStats, onOpenPatient }) {
   /**
-   * Contadores derivados da lista local de pacientes.
-   * Eles ajudam a tela a parecer mais próxima de um painel real.
+   * Os contadores vêm do hook usePatientsData.
+   * Caso a página seja usada isoladamente no futuro, o fallback evita erro visual.
    */
-  const activePatients = patients.filter(
-    (patient) => patient.status === "Em acompanhamento"
-  )
-
-  const screeningPatients = patients.filter(
-    (patient) => patient.status === "Triagem inicial"
-  )
+  const stats = patientStats || {
+    total: patients.length,
+    active: 0,
+    screening: 0,
+  }
 
   return (
     <main className="mx-auto w-full max-w-[1800px] px-8 py-8">
@@ -45,6 +42,10 @@ export function PatientsPage({ onOpenPatient }) {
             </p>
           </div>
 
+          {/*
+            O botão ainda não abre modal nesta etapa.
+            No próximo passo, ele será conectado ao AddPatientModal.
+          */}
           <button
             type="button"
             className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
@@ -58,21 +59,21 @@ export function PatientsPage({ onOpenPatient }) {
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">Total de pacientes</p>
           <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {patients.length}
+            {stats.total}
           </strong>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">Em acompanhamento</p>
           <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {activePatients.length}
+            {stats.active}
           </strong>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">Triagem inicial</p>
           <strong className="mt-2 block text-3xl font-black text-slate-950">
-            {screeningPatients.length}
+            {stats.screening}
           </strong>
         </div>
       </section>
@@ -96,7 +97,7 @@ export function PatientsPage({ onOpenPatient }) {
                     </h3>
 
                     <p className="text-sm text-slate-500">
-                      {patient.age} anos
+                      {patient.age ? `${patient.age} anos` : "Idade não informada"}
                     </p>
                   </div>
                 </div>
@@ -106,12 +107,14 @@ export function PatientsPage({ onOpenPatient }) {
                 </span>
               </div>
 
-              <p className="mt-5 text-sm font-medium text-slate-700">
-                {patient.mainComplaint}
-              </p>
+              {patient.mainComplaint && (
+                <p className="mt-5 text-sm font-medium text-slate-700">
+                  {patient.mainComplaint}
+                </p>
+              )}
 
               <p className="mt-3 text-sm leading-relaxed text-slate-500">
-                {patient.description}
+                {patient.description || "Paciente sem descrição clínica inicial."}
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -144,7 +147,7 @@ export function PatientsPage({ onOpenPatient }) {
               </div>
 
               {/*
-                A navegação ainda é controlada por estado no App.jsx.
+                A navegação ainda é controlada pelo App.jsx.
                 Futuramente, esse clique pode ser substituído por uma rota real.
               */}
               <button
