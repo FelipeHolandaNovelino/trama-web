@@ -22,9 +22,9 @@ O sistema organiza informações clínicas em diferentes áreas e modos de visua
 
 ## Conceito principal
 
-No Trama, um paciente possui uma linha clínica composta por sessões.
+No Trama, cada paciente possui sua própria linha clínica.
 
-Cada sessão pode conter vários blocos de eventos. Isso permite que, em um único atendimento, o psicólogo registre diferentes acontecimentos, emoções, pessoas envolvidas, padrões e conexões clínicas.
+Essa linha clínica é composta por sessões, e cada sessão pode conter vários blocos de eventos. Isso permite que, em um único atendimento, o psicólogo registre diferentes acontecimentos, emoções, pessoas envolvidas, padrões e conexões clínicas.
 
 Exemplo:
 
@@ -103,6 +103,50 @@ Cada bloco de evento pode ter:
 - Cabeçalho compacto e responsivo.
 - Botão para criar nova sessão.
 - Dados do paciente selecionado refletidos no cabeçalho da timeline.
+- Timeline individual carregada pelo identificador do paciente.
+
+### Timeline individual por paciente
+
+Cada paciente possui sua própria timeline persistida separadamente no `localStorage`.
+
+Exemplo:
+
+```txt
+Ana Luiza
+└─ localStorage: trama_timeline_data_ana-luiza
+
+João Luiz
+└─ localStorage: trama_timeline_data_joao-luiz
+
+Marcos Vieira
+└─ localStorage: trama_timeline_data_marcos-vieira
+```
+
+Isso permite que:
+
+- sessões de um paciente não apareçam em outro;
+- blocos de um paciente não sejam compartilhados com outro;
+- conexões clínicas fiquem restritas ao prontuário do paciente correto;
+- cada paciente tenha evolução própria.
+
+### Seeds demonstrativos
+
+O projeto possui um arquivo central para timelines demonstrativas:
+
+```txt
+src/data/timelineSeeds.js
+```
+
+Esse arquivo permite definir dados iniciais para pacientes específicos.
+
+Atualmente:
+
+- **Ana Luiza** possui uma timeline demonstrativa com 20 sessões;
+- cada sessão da Ana possui 5 blocos;
+- em cada sessão, 2 blocos possuem conexões clínicas;
+- os demais pacientes começam com timeline vazia.
+
+Pacientes sem seed continuam funcionando normalmente: suas sessões são adicionadas manualmente pela interface do sistema.
 
 ### Sessões
 
@@ -118,6 +162,7 @@ Cada bloco de evento pode ter:
 - Edição dos dados da sessão.
 - Exclusão de sessão inteira com modal de confirmação.
 - Adição de novos blocos em sessão existente.
+- Sessões separadas por paciente.
 
 ### Blocos de eventos
 
@@ -128,6 +173,7 @@ Cada bloco de evento pode ter:
 - Visualização compacta dos blocos.
 - Abertura de bloco em modal.
 - Exibição de emoções, pessoas, tags e intensidade emocional.
+- Blocos pertencem à timeline individual do paciente aberto.
 
 ### Conexões
 
@@ -135,6 +181,7 @@ Cada bloco de evento pode ter:
 - Indicação visual de blocos conectados.
 - Abertura de blocos conectados dentro do modal.
 - Remoção automática de conexões inválidas ao excluir blocos ou sessões.
+- Conexões restritas à timeline do paciente atual.
 
 ### Confirmações
 
@@ -143,7 +190,7 @@ O sistema possui um modal próprio de confirmação para ações críticas:
 - excluir paciente;
 - excluir bloco;
 - excluir sessão;
-- restaurar timeline inicial.
+- restaurar timeline do paciente atual.
 
 Isso substitui o `confirm()` padrão do navegador e mantém a experiência visual dentro do padrão do Trama.
 
@@ -209,7 +256,8 @@ src/
 │  ├─ patient.js
 │  ├─ patients.js
 │  ├─ sessionOptions.js
-│  └─ timeline.js
+│  ├─ timeline.js
+│  └─ timelineSeeds.js
 │
 ├─ hooks/
 │  ├─ usePatientsData.js
@@ -232,7 +280,7 @@ src/
 
 ## Arquitetura atual
 
-O projeto foi organizado para separar responsabilidades entre páginas, componentes visuais, hooks de dados, funções utilitárias e funções de mutação.
+O projeto foi organizado para separar responsabilidades entre páginas, componentes visuais, hooks de dados, funções utilitárias, seeds demonstrativos e funções de mutação.
 
 ```txt
 App.jsx
@@ -251,10 +299,13 @@ patientsUtils.js
 → centraliza busca, normalização e filtros de pacientes
 
 PatientPage.jsx
-→ controla a tela clínica do paciente e os modais principais da timeline
+→ controla a tela clínica do paciente e envia o patientId para a timeline
 
 useTimelineData.js
-→ controla estado, persistência e ações da timeline
+→ controla estado, persistência e ações da timeline individual por paciente
+
+timelineSeeds.js
+→ centraliza timelines demonstrativas opcionais por paciente
 
 timelineMutations.js
 → altera a estrutura da timeline
@@ -289,7 +340,8 @@ Responsabilidades:
 - renderizar a página correta conforme a aba selecionada;
 - manter o paciente selecionado;
 - conectar ações de pacientes com `usePatientsData`;
-- sincronizar alterações do paciente selecionado com a timeline.
+- sincronizar alterações do paciente selecionado com a timeline;
+- enviar o paciente selecionado para `PatientPage`.
 
 ---
 
@@ -419,8 +471,10 @@ Controla a página clínica do paciente.
 
 Responsabilidades:
 
+- definir o paciente aberto;
 - renderizar cabeçalho do paciente;
-- renderizar timeline;
+- enviar o `patientId` para `useTimelineData`;
+- renderizar timeline individual;
 - abrir e fechar modal de criação de sessão/bloco;
 - abrir modal de confirmação;
 - conectar ações da interface com o hook `useTimelineData`.
@@ -437,18 +491,22 @@ Responsabilidades:
 - exibir tags;
 - exibir queixa/contexto clínico;
 - exibir botão de edição futura;
-- exibir botão para criar nova sessão.
+- exibir botão para criar nova sessão;
+- permitir voltar para a lista de pacientes quando essa ação estiver disponível.
 
 ---
 
 ### `useTimelineData.js`
 
-Hook responsável por centralizar os dados da timeline.
+Hook responsável por centralizar os dados da timeline individual do paciente.
 
 Responsabilidades:
 
-- carregar dados do `localStorage`;
-- salvar dados no `localStorage`;
+- receber o `patientId` do paciente aberto;
+- carregar a timeline do paciente pelo `localStorage`;
+- salvar a timeline em uma chave individual por paciente;
+- carregar seed demonstrativo quando existir;
+- iniciar pacientes sem seed com timeline vazia;
 - fornecer blocos existentes para conexões;
 - criar sessão;
 - criar bloco;
@@ -457,9 +515,35 @@ Responsabilidades:
 - editar bloco;
 - excluir sessão;
 - excluir bloco;
-- restaurar timeline inicial.
+- restaurar a timeline do paciente atual.
 
-Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/backend.
+Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/backend com prontuários separados por paciente.
+
+---
+
+### `timelineSeeds.js`
+
+Centraliza timelines demonstrativas opcionais por paciente.
+
+Responsabilidades:
+
+- guardar seeds clínicos de demonstração;
+- mapear seeds por `patientId`;
+- retornar uma timeline inicial quando o paciente possuir seed;
+- retornar timeline vazia quando o paciente não possuir seed;
+- evitar múltiplos arquivos de seed espalhados pelo projeto.
+
+Atualmente, o seed demonstrativo existe para:
+
+```txt
+ana-luiza
+```
+
+A paciente Ana Luiza possui:
+
+- 20 sessões demonstrativas;
+- 5 blocos por sessão;
+- 2 blocos com conexões clínicas por sessão.
 
 ---
 
@@ -473,7 +557,9 @@ Responsabilidades:
 - controlar modal de bloco;
 - controlar modal de sessão;
 - preparar agrupamentos de blocos;
-- distribuir dados para os componentes visuais.
+- distribuir dados para os componentes visuais;
+- lidar com timelines vazias;
+- atualizar ano e mês selecionados quando novas sessões são criadas.
 
 ---
 
@@ -534,7 +620,7 @@ Atualmente usado para:
 - confirmar exclusão de paciente;
 - confirmar exclusão de bloco;
 - confirmar exclusão de sessão;
-- confirmar restauração da timeline inicial.
+- confirmar restauração da timeline do paciente atual.
 
 ---
 
@@ -615,12 +701,20 @@ Neste momento, o projeto usa `localStorage` para persistir dados no navegador.
 Dados persistidos atualmente:
 
 - lista de pacientes;
-- timeline;
+- timeline individual de cada paciente;
 - sessões;
 - blocos;
 - conexões.
 
-Isso permite testar criação, edição, exclusão, filtros e navegação sem backend.
+As timelines são salvas por paciente, usando chaves como:
+
+```txt
+trama_timeline_data_ana-luiza
+trama_timeline_data_joao-luiz
+trama_timeline_data_marcos-vieira
+```
+
+Isso permite testar criação, edição, exclusão, filtros, navegação e prontuários separados sem backend.
 
 Futuramente, essa camada deve ser substituída por uma API com banco de dados.
 
@@ -640,6 +734,9 @@ O projeto atualmente possui uma base funcional para:
 - persistir pacientes localmente;
 - abrir paciente na timeline;
 - visualizar paciente selecionado;
+- manter timeline individual por paciente;
+- carregar seed demonstrativo opcional por paciente;
+- iniciar pacientes sem seed com timeline vazia;
 - criar sessões;
 - criar múltiplos blocos por sessão;
 - adicionar blocos em sessões existentes;
@@ -654,21 +751,51 @@ O projeto atualmente possui uma base funcional para:
 
 ---
 
+## Dados demonstrativos atuais
+
+O projeto possui dados demonstrativos para facilitar apresentação e testes visuais.
+
+### Paciente Ana Luiza
+
+A paciente Ana Luiza possui uma timeline demonstrativa criada em `timelineSeeds.js`.
+
+Essa timeline contém:
+
+- 20 sessões;
+- 5 blocos por sessão;
+- 100 blocos no total;
+- 2 blocos conectados por sessão;
+- sessões distribuídas entre abril e agosto de 2026.
+
+Esses dados são carregados apenas quando a Ana não possui uma timeline salva no `localStorage`.
+
+Caso a timeline da Ana já exista no navegador, o sistema preserva os dados salvos localmente.
+
+Para recarregar o seed demonstrativo da Ana durante desenvolvimento:
+
+```js
+localStorage.removeItem("trama_timeline_data_ana-luiza")
+```
+
+Depois, basta atualizar a página e abrir a paciente Ana Luiza novamente.
+
+---
+
 ## Próximos passos planejados
 
 ### Curto prazo
 
-- Separar componentes restantes da área de pacientes, se necessário.
 - Melhorar responsividade da aba Pacientes.
 - Adicionar edição do paciente diretamente pelo cabeçalho clínico.
-- Criar vínculo real entre paciente e timeline individual.
 - Melhorar modal de criação de sessão/bloco.
 - Adicionar busca/filtros por emoção, pessoa e tag dentro da timeline.
 - Melhorar o design dos modais.
+- Criar estado vazio mais orientativo para timeline sem sessões.
+- Criar indicadores visuais melhores para pacientes com ou sem timeline.
 
 ### Médio prazo
 
-- Criar prontuário individual por paciente.
+- Criar prontuário individual mais completo por paciente.
 - Criar painel de padrões emocionais.
 - Criar tela de tags e conexões.
 - Criar visão geral de sessões.
@@ -715,6 +842,8 @@ O foco atual é construir um MVP funcional, organizado e apresentável como proj
 A área de pacientes já possui um CRUD local funcional com persistência em `localStorage`.
 
 A área de timeline já permite registrar sessões, blocos, emoções, relações, conexões e espelho clínico.
+
+Cada paciente possui timeline individual, com seed demonstrativo opcional por paciente.
 
 ---
 
