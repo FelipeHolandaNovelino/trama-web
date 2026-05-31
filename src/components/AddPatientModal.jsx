@@ -1,24 +1,76 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 const initialFormData = {
   name: "",
+  birthDate: "",
   age: "",
   status: "Triagem inicial",
+  email: "",
+  phone: "",
+  treatmentStartDate: "",
+  lastSessionDate: "",
+  nextSessionDate: "",
   mainComplaint: "",
-  lastSession: "—",
-  nextSession: "—",
   description: "",
   tags: "",
+  relationships: "",
+}
+
+/**
+ * Calcula a idade com base na data de nascimento.
+ * O cálculo considera se o aniversário já aconteceu no ano atual.
+ */
+function calculateAgeFromBirthDate(birthDate) {
+  if (!birthDate) return ""
+
+  const today = new Date()
+  const birth = new Date(`${birthDate}T00:00:00`)
+
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDifference = today.getMonth() - birth.getMonth()
+  const dayDifference = today.getDate() - birth.getDate()
+
+  if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
+    age -= 1
+  }
+
+  return age >= 0 ? String(age) : ""
+}
+
+/**
+ * Converte uma data no formato usado pelo input date para o formato visual brasileiro.
+ * Exemplo: 2026-03-27 → 27/03/2026.
+ */
+function formatDateToBrazilian(dateValue) {
+  if (!dateValue) return "—"
+
+  const [year, month, day] = dateValue.split("-")
+
+  if (!year || !month || !day) return "—"
+
+  return `${day}/${month}/${year}`
+}
+
+/**
+ * Converte campos de texto separados por vírgula em listas limpas.
+ * Usado para tags clínicas e relações importantes.
+ */
+function parseCommaSeparatedList(text) {
+  return text
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 /**
  * Modal responsável pelo cadastro inicial de pacientes.
  *
- * Nesta fase do MVP, o modal coleta apenas os dados essenciais para criar
- * o card do paciente e preparar o prontuário para a timeline clínica.
+ * Ele coleta dados de identificação, agenda clínica e síntese inicial do caso.
+ * A persistência continua fora do modal, por meio do hook usePatientsData.
  */
 export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
   const [formData, setFormData] = useState(initialFormData)
+  const [formError, setFormError] = useState("")
 
   /**
    * Sempre que o modal abre, o formulário começa limpo.
@@ -27,8 +79,14 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
   useEffect(() => {
     if (isOpen) {
       setFormData(initialFormData)
+      setFormError("")
     }
   }, [isOpen])
+
+  const calculatedAge = useMemo(
+    () => calculateAgeFromBirthDate(formData.birthDate),
+    [formData.birthDate]
+  )
 
   if (!isOpen) {
     return null
@@ -41,39 +99,48 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
       ...currentData,
       [name]: value,
     }))
-  }
 
-  /**
-   * Converte o campo de tags em uma lista limpa.
-   * O usuário digita separado por vírgulas, mas a interface usa array.
-   */
-  function parseTags(tagsText) {
-    return tagsText
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean)
+    if (formError) {
+      setFormError("")
+    }
   }
 
   function handleSubmit(event) {
     event.preventDefault()
 
     /**
-     * Nome é o único campo obrigatório nesta etapa.
-     * Os demais campos podem ser preenchidos depois, quando a edição existir.
+     * Nome é obrigatório porque identifica o paciente em toda a navegação.
+     * Os demais campos podem ser preenchidos ou editados posteriormente.
      */
     if (!formData.name.trim()) {
+      setFormError("Informe o nome do paciente para continuar.")
       return
     }
 
+    const patientAge = calculatedAge || formData.age
+
     onCreatePatient({
       name: formData.name,
-      age: formData.age,
+      birthDate: formData.birthDate,
+      age: patientAge,
       status: formData.status,
+      email: formData.email,
+      phone: formData.phone,
+      treatmentStartDate: formData.treatmentStartDate,
+      lastSessionDate: formData.lastSessionDate,
+      nextSessionDate: formData.nextSessionDate,
+      lastSession: formatDateToBrazilian(formData.lastSessionDate),
+      nextSession: formatDateToBrazilian(formData.nextSessionDate),
       mainComplaint: formData.mainComplaint,
-      lastSession: formData.lastSession || "—",
-      nextSession: formData.nextSession || "—",
       description: formData.description,
-      tags: parseTags(formData.tags),
+      tags: parseCommaSeparatedList(formData.tags),
+      relationships: parseCommaSeparatedList(formData.relationships),
+      mirror: {
+        centralWound: "",
+        mainFear: "",
+      },
+      emotionalPatterns: [],
+      medications: [],
     })
 
     onClose()
@@ -81,7 +148,7 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
-      <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-700">
@@ -92,9 +159,9 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
               Cadastrar paciente
             </h2>
 
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Preencha os dados iniciais do paciente. Depois, o prontuário poderá
-              ser enriquecido com sessões, blocos, emoções, relações e espelho.
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
+              Registre os dados iniciais do paciente para criar o prontuário e
+              preparar a timeline clínica do acompanhamento.
             </p>
           </div>
 
@@ -107,132 +174,274 @@ export function AddPatientModal({ isOpen, onClose, onCreatePatient }) {
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
-          <div className="grid gap-5 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className="mt-6 grid gap-6">
+          {formError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {formError}
+            </div>
+          )}
+
+          <section className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 className="text-base font-black text-slate-950">
+                Identificação
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Dados básicos para reconhecer o paciente dentro do sistema.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              <label className="grid gap-2 md:col-span-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Nome do paciente *
+                </span>
+
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Ex: Ana Luiza"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Status
+                </span>
+
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                >
+                  <option>Triagem inicial</option>
+                  <option>Em acompanhamento</option>
+                  <option>Encerrado</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Data de nascimento
+                </span>
+
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={formData.birthDate}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Idade
+                </span>
+
+                <input
+                  name="age"
+                  value={calculatedAge || formData.age}
+                  onChange={handleChange}
+                  disabled={Boolean(calculatedAge)}
+                  placeholder="Calculada pela data de nascimento"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition disabled:bg-slate-100 disabled:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+
+                {calculatedAge && (
+                  <span className="text-xs text-slate-500">
+                    Idade calculada automaticamente.
+                  </span>
+                )}
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 className="text-base font-black text-slate-950">
+                Contato
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Informações opcionais para referência do profissional.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  E-mail
+                </span>
+
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Ex: paciente@email.com"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Telefone
+                </span>
+
+                <input
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Ex: (11) 99999-9999"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 className="text-base font-black text-slate-950">
+                Agenda clínica
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Datas iniciais para organizar o acompanhamento do paciente.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Início do acompanhamento
+                </span>
+
+                <input
+                  type="date"
+                  name="treatmentStartDate"
+                  value={formData.treatmentStartDate}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Última sessão
+                </span>
+
+                <input
+                  type="date"
+                  name="lastSessionDate"
+                  value={formData.lastSessionDate}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Próxima sessão
+                </span>
+
+                <input
+                  type="date"
+                  name="nextSessionDate"
+                  value={formData.nextSessionDate}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 className="text-base font-black text-slate-950">
+                Síntese clínica inicial
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Um primeiro resumo para orientar o futuro espelho do paciente.
+              </p>
+            </div>
+
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-slate-700">
-                Nome do paciente *
+                Queixa principal
               </span>
 
               <input
-                name="name"
-                value={formData.name}
+                name="mainComplaint"
+                value={formData.mainComplaint}
                 onChange={handleChange}
-                placeholder="Ex: Ana Luiza"
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                placeholder="Ex: ansiedade relacionada ao trabalho e autocobrança"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
               />
             </label>
 
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-slate-700">
-                Idade
+                Descrição inicial
               </span>
 
-              <input
-                name="age"
-                value={formData.age}
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="Ex: 34"
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-              />
-            </label>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            <label className="grid gap-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Status
-              </span>
-
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-              >
-                <option>Triagem inicial</option>
-                <option>Em acompanhamento</option>
-                <option>Encerrado</option>
-              </select>
-            </label>
-
-            <label className="grid gap-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Última sessão
-              </span>
-
-              <input
-                name="lastSession"
-                value={formData.lastSession}
-                onChange={handleChange}
-                placeholder="Ex: 20/03/2026"
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                rows="4"
+                placeholder="Escreva um resumo inicial do caso..."
+                className="resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
               />
             </label>
 
-            <label className="grid gap-2">
-              <span className="text-sm font-semibold text-slate-700">
-                Próxima sessão
-              </span>
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Tags clínicas
+                </span>
 
-              <input
-                name="nextSession"
-                value={formData.nextSession}
-                onChange={handleChange}
-                placeholder="Ex: 27/03/2026"
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-              />
-            </label>
-          </div>
+                <input
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleChange}
+                  placeholder="Ex: ansiedade, trabalho, culpa"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
 
-          <label className="grid gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Queixa principal
-            </span>
+                <span className="text-xs text-slate-500">
+                  Separe as tags por vírgula.
+                </span>
+              </label>
 
-            <input
-              name="mainComplaint"
-              value={formData.mainComplaint}
-              onChange={handleChange}
-              placeholder="Ex: ansiedade relacionada ao trabalho e autocobrança"
-              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-            />
-          </label>
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Pessoas importantes
+                </span>
 
-          <label className="grid gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Descrição inicial
-            </span>
+                <input
+                  name="relationships"
+                  value={formData.relationships}
+                  onChange={handleChange}
+                  placeholder="Ex: mãe, pai, marido, chefe"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
 
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              placeholder="Escreva um resumo clínico inicial do caso..."
-              className="resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-            />
-          </label>
+                <span className="text-xs text-slate-500">
+                  Separe os nomes ou papéis por vírgula.
+                </span>
+              </label>
+            </div>
+          </section>
 
-          <label className="grid gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Tags clínicas
-            </span>
-
-            <input
-              name="tags"
-              value={formData.tags}
-              onChange={handleChange}
-              placeholder="Ex: ansiedade, trabalho, culpa, vínculos"
-              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-            />
-
-            <span className="text-xs text-slate-500">
-              Separe as tags por vírgula.
-            </span>
-          </label>
-
-          <footer className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+          <footer className="sticky bottom-0 -mx-6 -mb-6 flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-5 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
