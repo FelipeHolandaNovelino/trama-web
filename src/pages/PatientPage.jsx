@@ -3,12 +3,14 @@ import { patient } from "../data/patient"
 import { PatientHeader } from "../components/PatientHeader"
 import { Timeline } from "../components/Timeline"
 import { AddSessionModal } from "../components/AddSessionModal"
+import { ConfirmModal } from "../components/ConfirmModal"
 import { useTimelineData } from "../hooks/useTimelineData"
 
 export function PatientPage() {
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false)
   const [editingBlock, setEditingBlock] = useState(null)
   const [targetSession, setTargetSession] = useState(null)
+  const [confirmation, setConfirmation] = useState(null)
 
   const {
     timelineData,
@@ -64,32 +66,63 @@ export function PatientPage() {
     updateSession(sessionId, updatedSessionData)
   }
 
+  /**
+   * Abre o modal de confirmação antes de remover um bloco.
+   * A exclusão real só acontece depois da confirmação do usuário.
+   */
   function handleDeleteBlock(blockId) {
-    const confirmed = confirm("Tem certeza que deseja excluir este bloco?")
-
-    if (!confirmed) return
-
-    deleteBlock(blockId)
+    setConfirmation({
+      title: "Excluir bloco?",
+      description:
+        "Este bloco será removido da timeline. Conexões que apontam para ele também serão removidas automaticamente.",
+      confirmLabel: "Excluir bloco",
+      cancelLabel: "Cancelar",
+      variant: "danger",
+      onConfirm: () => deleteBlock(blockId),
+    })
   }
 
+  /**
+   * Abre o modal de confirmação antes de remover uma sessão inteira.
+   * Todos os blocos da sessão também serão removidos.
+   */
   function handleDeleteSession(sessionId) {
-    const confirmed = confirm(
-      "Tem certeza que deseja excluir esta sessão inteira? Todos os blocos desta sessão também serão apagados."
-    )
-
-    if (!confirmed) return
-
-    deleteSession(sessionId)
+    setConfirmation({
+      title: "Excluir sessão inteira?",
+      description:
+        "Todos os blocos desta sessão serão apagados. Conexões externas que apontam para esses blocos também serão removidas.",
+      confirmLabel: "Excluir sessão",
+      cancelLabel: "Cancelar",
+      variant: "danger",
+      onConfirm: () => deleteSession(sessionId),
+    })
   }
 
+  /**
+   * Confirma restauração da timeline inicial.
+   * Essa ação apaga os dados salvos localmente no navegador.
+   */
   function handleResetTimeline() {
-    const confirmed = confirm(
-      "Tem certeza que deseja restaurar a timeline inicial? Os blocos criados localmente serão apagados."
-    )
+    setConfirmation({
+      title: "Restaurar timeline inicial?",
+      description:
+        "Os dados criados localmente serão apagados e a timeline voltará para a base inicial do projeto.",
+      confirmLabel: "Restaurar timeline",
+      cancelLabel: "Cancelar",
+      variant: "danger",
+      onConfirm: resetTimeline,
+    })
+  }
 
-    if (!confirmed) return
+  function handleCancelConfirmation() {
+    setConfirmation(null)
+  }
 
-    resetTimeline()
+  function handleConfirmAction() {
+    if (!confirmation?.onConfirm) return
+
+    confirmation.onConfirm()
+    setConfirmation(null)
   }
 
   return (
@@ -109,6 +142,7 @@ export function PatientPage() {
 
       <footer className="mt-8 flex justify-end border-t border-slate-200 pt-6">
         <button
+          type="button"
           onClick={handleResetTimeline}
           className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
         >
@@ -125,6 +159,17 @@ export function PatientPage() {
         existingBlocks={existingBlocks}
         initialBlock={editingBlock}
         targetSession={targetSession}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(confirmation)}
+        title={confirmation?.title}
+        description={confirmation?.description}
+        confirmLabel={confirmation?.confirmLabel}
+        cancelLabel={confirmation?.cancelLabel}
+        variant={confirmation?.variant}
+        onConfirm={handleConfirmAction}
+        onCancel={handleCancelConfirmation}
       />
     </main>
   )
