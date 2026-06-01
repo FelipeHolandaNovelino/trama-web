@@ -23,7 +23,7 @@ function EditIcon() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-4.5 w-4.5"
+      className="h-[18px] w-[18px]"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
@@ -41,7 +41,7 @@ function TrashIcon() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-4.5 w-4.5"
+      className="h-[18px] w-[18px]"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
@@ -62,7 +62,7 @@ function OpenIcon() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-4.5 w-4.5"
+      className="h-[18px] w-[18px]"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
@@ -141,10 +141,11 @@ function getTimelineDescription(summary) {
 }
 
 /**
- * Linha horizontal compacta de paciente.
+ * Linha responsiva de paciente.
  *
- * O card inteiro abre o prontuário ao ser clicado.
- * Os botões internos interrompem o clique para evitar abertura acidental.
+ * Desktop: usa colunas horizontais.
+ * Mobile/tablet: reorganiza as informações em blocos verticais compactos.
+ * O card inteiro abre o prontuário; botões internos interrompem esse clique.
  */
 export function PatientCard({
   patient,
@@ -194,10 +195,10 @@ export function PatientCard({
       onClick={handleOpenPatient}
       onKeyDown={handleKeyboardOpen}
       aria-label={`Abrir prontuário de ${patient.name}`}
-      className="grid cursor-pointer gap-4 px-5 py-4 outline-none transition hover:bg-violet-50/30 focus-visible:bg-violet-50/40 focus-visible:ring-4 focus-visible:ring-violet-100 lg:grid-cols-[minmax(0,1.8fr)_210px_235px_112px] lg:items-center lg:px-6"
+      className="grid cursor-pointer gap-4 px-4 py-4 outline-none transition hover:bg-violet-50/30 focus-visible:bg-violet-50/40 focus-visible:ring-4 focus-visible:ring-violet-100 sm:px-5 lg:grid-cols-[minmax(0,1.8fr)_210px_235px_112px] lg:items-center lg:px-6"
     >
-      <section className="flex min-w-0 gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-sm font-black text-violet-700">
+      <section className="flex min-w-0 gap-3 sm:gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-sm font-black text-violet-700 sm:h-12 sm:w-12">
           {getInitials(patient.name)}
         </div>
 
@@ -207,7 +208,7 @@ export function PatientCard({
               {patient.name}
             </h3>
 
-            <span className="text-slate-300">·</span>
+            <span className="hidden text-slate-300 sm:inline">·</span>
 
             <span className="text-xs font-medium text-slate-500">
               {patient.age ? `${patient.age} anos` : "Idade não informada"}
@@ -220,22 +221,22 @@ export function PatientCard({
             </p>
           )}
 
-          <p className="mt-1.5 line-clamp-1 max-w-3xl text-sm leading-relaxed text-slate-500">
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-500 sm:line-clamp-1">
             {patient.description || "Paciente sem descrição clínica inicial."}
           </p>
         </div>
       </section>
 
-      <section className="flex flex-wrap items-center gap-3 lg:block lg:border-l lg:border-slate-200 lg:px-5">
+      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-3 sm:grid-cols-[auto_1fr] sm:items-center lg:block lg:rounded-none lg:border-0 lg:border-l lg:border-slate-200 lg:bg-transparent lg:p-0 lg:px-5">
         <span
-          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(
+          className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(
             patient.status
           )}`}
         >
           {patient.status}
         </span>
 
-        <div className="mt-0 flex items-start gap-2 text-slate-500 lg:mt-3">
+        <div className="flex items-start gap-2 text-slate-500 lg:mt-3">
           <CalendarIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
 
           <div>
@@ -250,7 +251,7 @@ export function PatientCard({
         </div>
       </section>
 
-      <section className="grid gap-2 text-slate-600 sm:grid-cols-2 lg:grid-cols-1 lg:border-l lg:border-slate-200 lg:px-5">
+      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-slate-600 sm:grid-cols-2 lg:grid-cols-1 lg:rounded-none lg:border-0 lg:border-l lg:border-slate-200 lg:bg-transparent lg:p-0 lg:px-5">
         <div className="flex items-start gap-2">
           <CalendarIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
 
@@ -280,36 +281,42 @@ export function PatientCard({
         </div>
       </section>
 
-      <section className="flex items-center justify-start gap-1.5 border-slate-200 text-slate-500 lg:justify-end lg:border-l lg:px-3">
-        <button
-          type="button"
-          onClick={handleEditClick}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-violet-50 hover:text-violet-700"
-          aria-label={`Editar ${patient.name}`}
-          title="Editar paciente"
-        >
-          <EditIcon />
-        </button>
+      <section className="flex items-center justify-between border-t border-slate-100 pt-2 text-slate-500 sm:justify-start sm:gap-2 lg:justify-end lg:border-l lg:border-t-0 lg:border-slate-200 lg:px-3 lg:pt-0">
+        <span className="text-xs font-medium text-slate-400 lg:hidden">
+          Ações
+        </span>
 
-        <button
-          type="button"
-          onClick={handleDeleteClick}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-rose-50 hover:text-rose-600"
-          aria-label={`Excluir ${patient.name}`}
-          title="Excluir paciente"
-        >
-          <TrashIcon />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-violet-50 hover:text-violet-700"
+            aria-label={`Editar ${patient.name}`}
+            title="Editar paciente"
+          >
+            <EditIcon />
+          </button>
 
-        <button
-          type="button"
-          onClick={handleOpenButtonClick}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-violet-50 hover:text-violet-700"
-          aria-label={`Abrir ${patient.name}`}
-          title="Abrir paciente"
-        >
-          <OpenIcon />
-        </button>
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-rose-50 hover:text-rose-600"
+            aria-label={`Excluir ${patient.name}`}
+            title="Excluir paciente"
+          >
+            <TrashIcon />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenButtonClick}
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-violet-50 hover:text-violet-700"
+            aria-label={`Abrir ${patient.name}`}
+            title="Abrir paciente"
+          >
+            <OpenIcon />
+          </button>
+        </div>
       </section>
     </article>
   )
