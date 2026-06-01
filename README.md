@@ -12,8 +12,8 @@ O objetivo do Trama é ajudar psicólogos autônomos, especialmente profissionai
 
 O sistema organiza informações clínicas em diferentes áreas e modos de visualização:
 
-- **Pacientes**: lista, cadastro, edição, exclusão, busca e filtros.
-- **Sessões**: visão em formato de calendário clínico, organizada pela data dos atendimentos.
+- **Pacientes**: listagem, cadastro, edição, exclusão, busca, filtros e resumo da timeline.
+- **Sessões**: visão em calendário clínico, organizada pela data dos atendimentos.
 - **Emoções**: blocos agrupados pelas emoções associadas aos acontecimentos.
 - **Relações**: blocos agrupados pelas pessoas importantes na vida do paciente.
 - **Espelho**: linha da vida emocional do paciente, organizada pela data real dos acontecimentos relatados.
@@ -71,11 +71,14 @@ Cada bloco de evento pode ter:
 
 ### Pacientes
 
-- Listagem de pacientes.
+- Listagem de pacientes em layout horizontal.
+- Layout responsivo para desktop, tablet e mobile.
 - Cadastro de novo paciente.
 - Modal robusto de criação de paciente.
 - Edição de paciente usando o mesmo modal de cadastro.
 - Exclusão de paciente com modal de confirmação.
+- Card inteiro clicável para abrir o prontuário do paciente.
+- Ações internas de editar, excluir e abrir sem disparar clique acidental no card.
 - Busca por:
   - nome;
   - queixa principal;
@@ -90,18 +93,58 @@ Cada bloco de evento pode ter:
   - Triagem inicial;
   - Em acompanhamento;
   - Encerrado.
-- Cards de estatísticas:
-  - total de pacientes;
-  - pacientes em acompanhamento;
-  - pacientes em triagem inicial.
 - Estado vazio quando nenhum paciente é encontrado.
 - Persistência dos pacientes no `localStorage`.
+
+### Lista de pacientes
+
+A lista de pacientes foi refinada para uma experiência mais discreta e clínica.
+
+Atualmente ela possui:
+
+- topo mais limpo;
+- título e subtítulo mais discretos;
+- busca e filtro compactos;
+- botão de novo paciente no topo;
+- remoção dos cards de estatística da interface principal;
+- pacientes exibidos em linhas horizontais no desktop;
+- cards verticais compactos em telas menores;
+- tags removidas visualmente do card;
+- resumo da timeline no card;
+- última e próxima sessão no card;
+- ações discretas no final da linha.
+
+As tags continuam existindo nos dados e ainda podem ser usadas em busca, mas não aparecem mais no card para reduzir poluição visual.
+
+### Resumo da timeline no card do paciente
+
+Cada linha de paciente mostra um resumo da timeline individual:
+
+- quantidade de sessões;
+- quantidade de blocos;
+- quantidade de conexões clínicas;
+- indicação de paciente sem sessões registradas.
+
+Exemplo:
+
+```txt
+20 sessões · 100 blocos
+40 conexões clínicas
+```
+
+ou:
+
+```txt
+Nenhuma sessão
+Sem blocos registrados
+```
 
 ### Paciente selecionado
 
 - Exibição de dados resumidos do paciente.
 - Cabeçalho compacto e responsivo.
 - Botão para criar nova sessão.
+- Botão para voltar à lista de pacientes.
 - Dados do paciente selecionado refletidos no cabeçalho da timeline.
 - Timeline individual carregada pelo identificador do paciente.
 
@@ -158,6 +201,8 @@ Pacientes sem seed continuam funcionando normalmente: suas sessões são adicion
   - sessões totais;
   - blocos de eventos totais;
   - mês aberto.
+- Estado vazio para pacientes sem sessões.
+- Botão para criar a primeira sessão a partir do estado vazio.
 - Abertura de sessão em modal.
 - Edição dos dados da sessão.
 - Exclusão de sessão inteira com modal de confirmação.
@@ -250,7 +295,8 @@ src/
 │  ├─ Sidebar.jsx
 │  ├─ Timeline.jsx
 │  ├─ TimelineBlock.jsx
-│  └─ TimelineBlockModal.jsx
+│  ├─ TimelineBlockModal.jsx
+│  └─ TimelineEmptyState.jsx
 │
 ├─ data/
 │  ├─ patient.js
@@ -268,6 +314,7 @@ src/
 │  └─ PatientsPage.jsx
 │
 ├─ utils/
+│  ├─ patientTimelineSummary.js
 │  ├─ patientsUtils.js
 │  ├─ timelineMutations.js
 │  └─ timelineUtils.js
@@ -275,6 +322,8 @@ src/
 ├─ App.jsx
 └─ main.jsx
 ```
+
+> Observação: `PatientsStats.jsx` existe no projeto, mas os cards de estatística não são renderizados na versão atual da listagem de pacientes.
 
 ---
 
@@ -298,6 +347,9 @@ usePatientsData.js
 patientsUtils.js
 → centraliza busca, normalização e filtros de pacientes
 
+patientTimelineSummary.js
+→ lê resumos de timeline por paciente para exibir na listagem
+
 PatientPage.jsx
 → controla a tela clínica do paciente e envia o patientId para a timeline
 
@@ -315,6 +367,9 @@ timelineUtils.js
 
 Timeline.jsx
 → controla modos, modais de sessão/bloco e distribuição das visões
+
+TimelineEmptyState.jsx
+→ orienta o usuário quando o paciente ainda não possui sessões
 
 SessionsCalendar.jsx
 → renderiza a visão de sessões em calendário
@@ -363,14 +418,15 @@ Controla a página de pacientes.
 
 Responsabilidades:
 
-- renderizar cabeçalho da listagem;
+- renderizar o topo da listagem;
+- controlar busca e filtro;
 - controlar abertura e fechamento do modal de paciente;
 - controlar paciente em edição;
 - controlar paciente em exclusão;
-- aplicar busca e filtro;
 - renderizar lista filtrada;
 - exibir estado vazio;
-- conectar criação, edição e exclusão com o hook de pacientes.
+- conectar criação, edição e exclusão com o hook de pacientes;
+- enviar resumos de timeline para cada card.
 
 ---
 
@@ -386,7 +442,7 @@ Responsabilidades:
 - editar paciente;
 - excluir paciente;
 - restaurar lista inicial;
-- calcular estatísticas da listagem;
+- calcular estatísticas internas da listagem;
 - normalizar dados para manter compatibilidade entre pacientes antigos e novos.
 
 Esse hook prepara o projeto para uma futura troca do `localStorage` por uma API/backend.
@@ -404,6 +460,22 @@ Inclui funções para:
 - montar texto pesquisável do paciente;
 - filtrar pacientes por busca e status;
 - identificar se há filtros ativos.
+
+---
+
+### `patientTimelineSummary.js`
+
+Centraliza a leitura dos resumos de timeline para a lista de pacientes.
+
+Responsabilidades:
+
+- ler timeline salva no `localStorage`;
+- carregar seed demonstrativo quando não houver timeline salva;
+- contar sessões;
+- contar blocos;
+- contar conexões clínicas;
+- gerar resumo por paciente;
+- evitar que `PatientCard.jsx` conheça detalhes de `localStorage` ou estrutura interna da timeline.
 
 ---
 
@@ -428,40 +500,43 @@ Responsabilidades:
 
 ### `PatientCard.jsx`
 
-Renderiza o card individual de paciente.
+Renderiza a linha responsiva de paciente.
 
 Responsabilidades:
 
-- exibir nome, idade, status e resumo clínico;
-- exibir tags principais;
+- exibir nome, idade, queixa principal e descrição;
+- exibir status;
+- exibir resumo da timeline;
 - exibir última e próxima sessão;
-- disparar ações de editar, excluir e abrir paciente.
+- permitir abrir o paciente clicando no card inteiro;
+- permitir navegação por teclado com `Enter`;
+- disparar ações de editar, excluir e abrir sem conflito com o clique do card;
+- reorganizar o layout em telas menores.
 
 ---
 
 ### `PatientsFilters.jsx`
 
-Renderiza os controles de busca e filtro.
+Renderiza os controles compactos de busca e filtro.
 
 Responsabilidades:
 
 - exibir campo de busca;
 - exibir filtro por status;
-- exibir contador de pacientes filtrados;
-- indicar filtros ativos;
-- permitir limpar filtros.
+- permitir limpar filtros;
+- manter a interface discreta no topo da página.
 
 ---
 
 ### `PatientsStats.jsx`
 
-Renderiza os cards de estatísticas da lista de pacientes.
+Componente criado anteriormente para cards de estatísticas.
 
-Responsabilidades:
+Status atual:
 
-- exibir total de pacientes;
-- exibir pacientes em acompanhamento;
-- exibir pacientes em triagem inicial.
+- permanece no projeto;
+- não é usado na versão atual da listagem;
+- pode ser reaproveitado futuramente em um dashboard geral.
 
 ---
 
@@ -560,6 +635,19 @@ Responsabilidades:
 - distribuir dados para os componentes visuais;
 - lidar com timelines vazias;
 - atualizar ano e mês selecionados quando novas sessões são criadas.
+
+---
+
+### `TimelineEmptyState.jsx`
+
+Renderiza o estado vazio da timeline.
+
+Responsabilidades:
+
+- orientar o usuário quando o paciente não possui sessões;
+- explicar o início da construção da linha clínica;
+- oferecer botão para criar a primeira sessão;
+- manter a experiência consistente para pacientes sem seed.
 
 ---
 
@@ -731,12 +819,15 @@ O projeto atualmente possui uma base funcional para:
 - excluir pacientes com confirmação;
 - buscar pacientes;
 - filtrar pacientes por status;
+- exibir pacientes em lista horizontal responsiva;
+- abrir paciente clicando no card inteiro;
 - persistir pacientes localmente;
 - abrir paciente na timeline;
 - visualizar paciente selecionado;
 - manter timeline individual por paciente;
 - carregar seed demonstrativo opcional por paciente;
 - iniciar pacientes sem seed com timeline vazia;
+- exibir estado vazio da timeline;
 - criar sessões;
 - criar múltiplos blocos por sessão;
 - adicionar blocos em sessões existentes;
@@ -785,13 +876,13 @@ Depois, basta atualizar a página e abrir a paciente Ana Luiza novamente.
 
 ### Curto prazo
 
-- Melhorar responsividade da aba Pacientes.
+- Atualizar visual do cabeçalho do paciente.
 - Adicionar edição do paciente diretamente pelo cabeçalho clínico.
 - Melhorar modal de criação de sessão/bloco.
 - Adicionar busca/filtros por emoção, pessoa e tag dentro da timeline.
 - Melhorar o design dos modais.
-- Criar estado vazio mais orientativo para timeline sem sessões.
 - Criar indicadores visuais melhores para pacientes com ou sem timeline.
+- Avaliar remoção ou reaproveitamento de `PatientsStats.jsx`.
 
 ### Médio prazo
 
@@ -840,6 +931,8 @@ Projeto em desenvolvimento.
 O foco atual é construir um MVP funcional, organizado e apresentável como projeto de portfólio.
 
 A área de pacientes já possui um CRUD local funcional com persistência em `localStorage`.
+
+A lista de pacientes possui layout horizontal responsivo, busca, filtro, resumo de timeline e abertura do paciente pelo card inteiro.
 
 A área de timeline já permite registrar sessões, blocos, emoções, relações, conexões e espelho clínico.
 
