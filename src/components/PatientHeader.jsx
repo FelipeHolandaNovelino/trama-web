@@ -91,7 +91,6 @@ function PlusIcon() {
 
 /**
  * Gera iniciais seguras para o avatar textual do paciente.
- * Útil enquanto o cadastro real ainda não possui upload de imagem.
  */
 function getInitials(name = "") {
   return name
@@ -104,8 +103,7 @@ function getInitials(name = "") {
 }
 
 /**
- * Define o estilo visual do status do paciente.
- * Mantém a mesma linguagem visual usada na lista de pacientes.
+ * Mantém o status visual consistente com a lista de pacientes.
  */
 function getStatusClassName(status) {
   if (status === "Em acompanhamento") {
@@ -120,34 +118,27 @@ function getStatusClassName(status) {
 }
 
 /**
- * Item compacto de informação usado no cabeçalho clínico.
+ * Informação discreta exibida na linha auxiliar do cabeçalho.
  */
-function HeaderInfoItem({ icon, label, value }) {
+function CompactInfoItem({ icon, label, value }) {
   if (!value) {
     return null
   }
 
   return (
-    <div className="flex items-start gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
-      <span className="mt-0.5 text-slate-400">{icon}</span>
-
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          {label}
-        </p>
-
-        <p className="mt-0.5 text-sm font-semibold text-slate-700">{value}</p>
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+      <span className="text-slate-400">{icon}</span>
+      <span className="text-slate-400">{label}:</span>
+      <strong className="font-semibold text-slate-700">{value}</strong>
+    </span>
   )
 }
 
 /**
- * Cabeçalho clínico do paciente aberto.
+ * Cabeçalho compacto do paciente aberto.
  *
- * A função deste componente é contextualizar rapidamente o prontuário:
- * quem é o paciente, qual é o status, quais são as datas clínicas principais
- * e qual ação imediata o profissional pode realizar.
+ * O objetivo é contextualizar o prontuário sem ocupar espaço excessivo
+ * antes da timeline clínica.
  */
 export function PatientHeader({
   patient,
@@ -156,81 +147,103 @@ export function PatientHeader({
   onEditPatient,
 }) {
   const description = patient.description || patient.summary
-  const ageLabel = patient.age ? `${patient.age} anos` : "Idade não informada"
   const complaint = patient.mainComplaint || patient.context
+  const ageLabel = patient.age ? `${patient.age} anos` : "Idade não informada"
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            {onBackToPatients && (
-              <button
-                type="button"
-                onClick={onBackToPatients}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-              >
-                <ArrowLeftIcon />
-                Pacientes
-              </button>
+    <section className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-sm font-black text-violet-700">
+            {patient.avatar ? (
+              <img
+                src={patient.avatar}
+                alt=""
+                className="h-full w-full rounded-2xl object-cover"
+              />
+            ) : (
+              getInitials(patient.name)
             )}
-
-            <span
-              className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${getStatusClassName(
-                patient.status
-              )}`}
-            >
-              {patient.status || "Status não informado"}
-            </span>
           </div>
 
-          <div className="mt-5 flex min-w-0 gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-violet-50 text-xl font-black text-violet-700">
-              {patient.avatar ? (
-                <img
-                  src={patient.avatar}
-                  alt=""
-                  className="h-full w-full rounded-3xl object-cover"
-                />
-              ) : (
-                getInitials(patient.name)
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {onBackToPatients && (
+                <button
+                  type="button"
+                  onClick={onBackToPatients}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+                >
+                  <ArrowLeftIcon />
+                  Pacientes
+                </button>
               )}
+
+              <h1 className="truncate text-xl font-black tracking-tight text-slate-950">
+                {patient.name}
+              </h1>
+
+              <span className="text-slate-300">·</span>
+
+              <span className="text-sm font-medium text-slate-500">
+                {ageLabel}
+              </span>
+
+              <span
+                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusClassName(
+                  patient.status
+                )}`}
+              >
+                {patient.status || "Status não informado"}
+              </span>
             </div>
 
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h1 className="truncate text-2xl font-black tracking-tight text-slate-950">
-                  {patient.name}
-                </h1>
+            {complaint && (
+              <p className="mt-1.5 line-clamp-1 text-sm font-semibold text-slate-800">
+                {complaint}
+              </p>
+            )}
 
-                <span className="text-slate-300">·</span>
+            {description && (
+              <p className="mt-1 line-clamp-1 max-w-5xl text-sm leading-relaxed text-slate-500">
+                {description}
+              </p>
+            )}
 
-                <span className="text-sm font-medium text-slate-500">
-                  {ageLabel}
-                </span>
-              </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              <CompactInfoItem
+                icon={<CalendarIcon />}
+                label="Última"
+                value={patient.lastSession || "—"}
+              />
 
-              {complaint && (
-                <p className="mt-2 text-sm font-semibold text-slate-800">
-                  {complaint}
-                </p>
-              )}
+              <CompactInfoItem
+                icon={<CalendarIcon />}
+                label="Próxima"
+                value={patient.nextSession || "—"}
+              />
 
-              {description && (
-                <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-500">
-                  {description}
-                </p>
-              )}
+              <CompactInfoItem
+                icon={<MailIcon />}
+                label="E-mail"
+                value={patient.email}
+              />
+
+              <CompactInfoItem
+                icon={<PhoneIcon />}
+                label="Telefone"
+                value={patient.phone}
+              />
             </div>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 sm:flex-row xl:flex-col">
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row xl:items-center">
           {onEditPatient && (
             <button
               type="button"
               onClick={onEditPatient}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Editar paciente
             </button>
@@ -239,34 +252,12 @@ export function PatientHeader({
           <button
             type="button"
             onClick={onAddSession}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
           >
             <PlusIcon />
             Nova sessão
           </button>
         </div>
-      </div>
-
-      <div className="mt-5 grid gap-3 border-t border-slate-200 pt-5 md:grid-cols-2 xl:grid-cols-4">
-        <HeaderInfoItem
-          icon={<CalendarIcon />}
-          label="Última sessão"
-          value={patient.lastSession || "—"}
-        />
-
-        <HeaderInfoItem
-          icon={<CalendarIcon />}
-          label="Próxima sessão"
-          value={patient.nextSession || "—"}
-        />
-
-        <HeaderInfoItem icon={<MailIcon />} label="E-mail" value={patient.email} />
-
-        <HeaderInfoItem
-          icon={<PhoneIcon />}
-          label="Telefone"
-          value={patient.phone}
-        />
       </div>
     </section>
   )
