@@ -6,6 +6,7 @@ import { PatientCard } from "../components/PatientCard"
 import { PatientsFilters } from "../components/PatientsFilters"
 import { PatientsStats } from "../components/PatientsStats"
 import { filterPatients, hasPatientsFilters } from "../utils/patientsUtils"
+import { getPatientsTimelineSummaries } from "../utils/patientTimelineSummary"
 
 export function PatientsPage({
   patients = [],
@@ -30,6 +31,16 @@ export function PatientsPage({
     active: 0,
     screening: 0,
   }
+
+  /**
+   * Resumos das timelines por paciente.
+   *
+   * A leitura considera timelines salvas no localStorage e seeds demonstrativos,
+   * permitindo que o card mostre sessões/blocos mesmo antes de abrir a timeline.
+   */
+  const timelineSummariesByPatientId = useMemo(() => {
+    return getPatientsTimelineSummaries(patients)
+  }, [patients])
 
   /**
    * Aplica busca textual e filtro por status usando a utility de pacientes.
@@ -151,6 +162,7 @@ export function PatientsPage({
             <PatientCard
               key={patient.id}
               patient={patient}
+              timelineSummary={timelineSummariesByPatientId[patient.id]}
               onEdit={handleOpenEditPatientModal}
               onDelete={handleOpenDeleteConfirmation}
               onOpen={onOpenPatient}

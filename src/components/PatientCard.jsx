@@ -13,14 +13,35 @@ function getInitials(name = "") {
 }
 
 /**
+ * Formata uma palavra no singular ou plural.
+ * Mantém os textos do resumo da timeline mais naturais.
+ */
+function formatCount(value, singular, plural) {
+  return value === 1 ? `${value} ${singular}` : `${value} ${plural}`
+}
+
+/**
  * Card visual de um paciente na listagem.
  *
  * Este componente não altera dados diretamente.
  * Ele apenas exibe as informações e dispara ações recebidas por props.
  */
-export function PatientCard({ patient, onEdit, onDelete, onOpen }) {
+export function PatientCard({
+  patient,
+  timelineSummary,
+  onEdit,
+  onDelete,
+  onOpen,
+}) {
+  const summary = timelineSummary || {
+    sessionsCount: 0,
+    blocksCount: 0,
+    connectionsCount: 0,
+    hasTimeline: false,
+  }
+
   return (
-    <article className="flex min-h-[400px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md">
+    <article className="flex min-h-[430px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-md">
       <div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -63,6 +84,35 @@ export function PatientCard({ patient, onEdit, onDelete, onOpen }) {
               {tag}
             </span>
           ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Timeline
+          </p>
+
+          {summary.hasTimeline ? (
+            <div className="mt-2 grid gap-2 text-sm text-slate-600">
+              <p className="font-semibold text-slate-800">
+                {formatCount(summary.sessionsCount, "sessão", "sessões")} ·{" "}
+                {formatCount(summary.blocksCount, "bloco", "blocos")}
+              </p>
+
+              <p className="text-xs text-slate-500">
+                {summary.connectionsCount > 0
+                  ? formatCount(
+                      summary.connectionsCount,
+                      "conexão clínica",
+                      "conexões clínicas"
+                    )
+                  : "Sem conexões clínicas registradas"}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              Nenhuma sessão registrada
+            </p>
+          )}
         </div>
       </div>
 
