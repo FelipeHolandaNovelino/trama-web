@@ -2,7 +2,7 @@
 
 **Trama** é um protótipo de sistema web para psicólogos acompanharem pacientes, sessões e acontecimentos clínicos de forma visual, cronológica e conectada.
 
-A proposta do projeto é ir além de uma listagem simples de atendimentos, permitindo que o profissional construa uma visão contínua da história emocional do paciente por meio de sessões, blocos narrativos, emoções, relações, padrões e conexões clínicas.
+A proposta do projeto é ir além de um prontuário tradicional, oferecendo uma forma mais clara de visualizar a trajetória emocional do paciente por meio de sessões, blocos narrativos, emoções, relações e conexões clínicas.
 
 ---
 
@@ -15,7 +15,7 @@ O sistema permite:
 - cadastrar e gerenciar pacientes;
 - registrar sessões clínicas;
 - dividir sessões em múltiplos blocos narrativos;
-- associar emoções, pessoas e tags aos acontecimentos;
+- associar emoções e relações aos acontecimentos;
 - criar conexões entre blocos;
 - visualizar a história do paciente por diferentes modos;
 - manter uma timeline individual para cada paciente.
@@ -41,13 +41,35 @@ Paciente: Ana Luiza
 
 ---
 
+## Navegação atual
+
+O menu lateral possui apenas:
+
+```txt
+Home
+Pacientes
+```
+
+A timeline não é uma aba global. Ela é acessada ao abrir um paciente.
+
+Fluxo principal:
+
+```txt
+Home
+→ Pacientes
+→ Abrir paciente
+→ Timeline clínica individual
+```
+
+---
+
 ## Funcionalidades atuais
 
 ### Home
 
 A Home é a tela inicial do profissional.
 
-Atualmente ela exibe:
+Ela exibe:
 
 - visão geral simples;
 - indicadores pequenos:
@@ -96,6 +118,47 @@ O card de paciente mostra:
 - próxima sessão.
 
 As tags continuam existindo nos dados e podem ser usadas na busca, mas não aparecem mais no card para manter a interface mais limpa.
+
+---
+
+### Relacionamentos do paciente
+
+O cadastro do paciente possui uma área de **Relacionamentos do paciente**.
+
+Nela, o profissional pode adicionar vínculos importantes, como:
+
+```txt
+Mãe
+Pai
+Marido
+Chefe
+Irmão
+Colega
+```
+
+Esses relacionamentos são salvos no perfil do paciente e aparecem depois como opções no campo **Relações** ao criar ou editar blocos da timeline.
+
+Isso faz com que cada paciente tenha suas próprias opções relacionais.
+
+Exemplo:
+
+```txt
+Paciente Ana Luiza
+Relacionamentos:
+├─ Mãe
+├─ Pai
+├─ Marido
+└─ Chefe
+
+Ao criar um bloco para Ana:
+Relações disponíveis:
+├─ Mãe
+├─ Pai
+├─ Marido
+└─ Chefe
+```
+
+Os relacionamentos são salvos com a primeira letra maiúscula para manter o padrão visual.
 
 ---
 
@@ -152,8 +215,7 @@ Cada bloco pode conter:
 - data do acontecimento;
 - data da sessão;
 - emoções;
-- pessoas envolvidas;
-- tags;
+- relações;
 - intensidade emocional;
 - conexões com outros blocos.
 
@@ -167,7 +229,52 @@ Os blocos podem ser:
 
 ---
 
-### Modos de visualização
+### ClinicalBlockCard
+
+O projeto possui um componente padronizado para exibição dos blocos clínicos:
+
+```txt
+src/components/ClinicalBlockCard.jsx
+```
+
+Esse componente centraliza o visual dos blocos usados em:
+
+```txt
+Sessões
+Emoções
+Relações
+Espelho
+```
+
+O card clínico exibe:
+
+- cor por tipo de bloco;
+- barra lateral colorida;
+- data em destaque;
+- tipo do bloco;
+- título;
+- resumo narrativo;
+- intensidade emocional;
+- emoções;
+- relações;
+- indicador de conexões;
+- ações opcionais de abrir, editar e excluir.
+
+Tipos de bloco e cores:
+
+```txt
+Evento              → violeta
+Insight             → âmbar
+Marco positivo      → verde
+Evento traumático   → rosa
+Observação clínica  → azul
+```
+
+Com isso, a interface fica mais consistente e qualquer ajuste visual nos blocos pode ser feito em um único componente.
+
+---
+
+## Modos de visualização da timeline
 
 A timeline do paciente possui quatro modos:
 
@@ -175,21 +282,104 @@ A timeline do paciente possui quatro modos:
 Sessões | Emoções | Relações | Espelho
 ```
 
-#### Sessões
+### Sessões
 
 Organiza os registros pela data do atendimento clínico.
 
-#### Emoções
+Permite:
+
+- visualizar sessões por ano e mês;
+- abrir uma sessão;
+- ver os blocos daquela sessão;
+- adicionar novo bloco à sessão;
+- editar sessão;
+- excluir sessão.
+
+---
+
+### Emoções
 
 Agrupa os blocos pelas emoções associadas.
 
-#### Relações
+Possui filtro por emoção, permitindo visualizar apenas blocos ligados a uma emoção específica.
 
-Agrupa os blocos pelas pessoas envolvidas.
+Exemplo:
 
-#### Espelho
+```txt
+Todas as emoções
+Ansiedade
+Culpa
+Raiva
+Tristeza
+```
 
-Mostra a linha da vida emocional do paciente organizada pela data real dos acontecimentos, não apenas pela data em que foram relatados.
+---
+
+### Relações
+
+Agrupa os blocos pelas relações envolvidas.
+
+Possui filtro por relacionamento, permitindo visualizar apenas blocos ligados a uma relação específica.
+
+Exemplo:
+
+```txt
+Todos os relacionamentos
+Mãe
+Pai
+Marido
+Chefe
+```
+
+As relações disponíveis vêm dos relacionamentos cadastrados no perfil do paciente e usados nos blocos.
+
+---
+
+### Espelho
+
+O Espelho mostra a linha da vida emocional do paciente organizada pela data real dos acontecimentos, não apenas pela data em que foram relatados em sessão.
+
+Ele possui:
+
+- cabeçalho compacto;
+- resumo em linha;
+- filtro por ano;
+- filtro por acontecimentos conectados;
+- filtro por alta intensidade;
+- agrupamento por ano;
+- cards clínicos padronizados com `ClinicalBlockCard`.
+
+Filtros atuais:
+
+```txt
+Todos os anos
+Todos
+Conectados
+Alta intensidade
+```
+
+O objetivo do Espelho é ajudar o psicólogo a visualizar a história emocional do paciente de forma contínua e conectada.
+
+---
+
+### Modal de bloco
+
+O `TimelineBlockModal` exibe a leitura completa de um acontecimento clínico.
+
+Ele mostra:
+
+- título;
+- tipo;
+- data do acontecimento;
+- data da sessão;
+- intensidade emocional;
+- narrativa completa;
+- emoções;
+- relações;
+- conexões clínicas;
+- acesso a blocos conectados.
+
+Esse modal é aberto a partir de sessões, emoções, relações e espelho.
 
 ---
 
@@ -201,7 +391,7 @@ Isso evita que a tela pareça quebrada quando um paciente ainda não possui hist
 
 ---
 
-### Dados demonstrativos
+## Dados demonstrativos
 
 O projeto possui um arquivo central de seeds:
 
@@ -228,28 +418,6 @@ Depois, basta atualizar a página e abrir a paciente Ana Luiza novamente.
 
 ---
 
-## Navegação atual
-
-O menu lateral possui apenas:
-
-```txt
-Home
-Pacientes
-```
-
-A timeline não é mais uma aba global. Ela é acessada ao abrir um paciente.
-
-Fluxo principal:
-
-```txt
-Home
-→ Pacientes
-→ Abrir paciente
-→ Timeline clínica individual
-```
-
----
-
 ## Estrutura do projeto
 
 ```txt
@@ -257,6 +425,7 @@ src/
 ├─ components/
 │  ├─ AddPatientModal.jsx
 │  ├─ AddSessionModal.jsx
+│  ├─ ClinicalBlockCard.jsx
 │  ├─ ConfirmModal.jsx
 │  ├─ GroupedBlocksView.jsx
 │  ├─ MirrorTimeline.jsx
@@ -321,7 +490,7 @@ PatientCard.jsx
 → renderiza a linha responsiva do paciente
 
 AddPatientModal.jsx
-→ cria e edita pacientes
+→ cria e edita pacientes, incluindo relacionamentos do paciente
 
 usePatientsData.js
 → controla estado, persistência e mutações de pacientes
@@ -350,8 +519,14 @@ SessionsCalendar.jsx
 GroupedBlocksView.jsx
 → renderiza agrupamentos por emoção e relação
 
+ClinicalBlockCard.jsx
+→ padroniza o visual dos blocos clínicos
+
 MirrorTimeline.jsx
 → renderiza o Espelho do paciente
+
+TimelineBlockModal.jsx
+→ exibe a leitura completa de um bloco clínico
 
 timelineUtils.js
 → lê, agrupa e calcula dados da timeline
@@ -372,6 +547,7 @@ Atualmente, o projeto usa `localStorage`.
 Dados persistidos:
 
 - pacientes;
+- relacionamentos do paciente;
 - timelines individuais;
 - sessões;
 - blocos;
@@ -433,7 +609,8 @@ O projeto já possui:
 - próximas sessões;
 - pacientes recentes;
 - CRUD local de pacientes;
-- busca e filtros;
+- relacionamentos cadastrados no perfil do paciente;
+- busca e filtros de pacientes;
 - lista de pacientes responsiva;
 - abertura do paciente pelo card inteiro;
 - timeline individual por paciente;
@@ -444,7 +621,12 @@ O projeto já possui:
 - edição de blocos;
 - exclusão com confirmação;
 - conexões entre blocos;
-- modos Sessões, Emoções, Relações e Espelho;
+- modo Sessões;
+- modo Emoções com filtro por emoção;
+- modo Relações com filtro por relacionamento;
+- modo Espelho com filtro por ano, conectados e alta intensidade;
+- cards clínicos padronizados com `ClinicalBlockCard`;
+- modal de bloco refinado;
 - seed demonstrativo para Ana Luiza;
 - persistência local.
 
@@ -454,17 +636,19 @@ O projeto já possui:
 
 ### Curto prazo
 
-- Revisar modal de criação de sessão/bloco.
-- Melhorar design dos modais.
-- Adicionar busca dentro da timeline.
-- Adicionar filtros por emoção, pessoa, tag e tipo de evento.
+- Revisar responsividade do Espelho em telas menores.
+- Melhorar fluxo de criação de relacionamentos dentro do paciente.
 - Melhorar edição do paciente dentro do prontuário.
-- Avaliar remoção ou reaproveitamento de `PatientsStats.jsx`.
+- Revisar `PatientsStats.jsx` e avaliar se ainda é necessário.
+- Revisar opções clínicas do modal de sessão.
+- Melhorar estados vazios dos modos Emoções, Relações e Espelho.
 
 ### Médio prazo
 
 - Criar prontuário individual mais completo.
 - Criar painel de padrões emocionais.
+- Criar trilhas emocionais.
+- Criar trilhas relacionais.
 - Criar visão geral de sessões.
 - Criar relatórios clínicos.
 - Adicionar autenticação.
