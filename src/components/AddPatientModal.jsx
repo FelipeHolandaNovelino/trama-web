@@ -51,10 +51,12 @@ function formatDateToBrazilian(dateValue) {
 }
 
 /**
- * Formata relacionamentos com primeira letra maiúscula.
+ * Padroniza relacionamentos com primeira letra maiúscula.
  *
- * Isso mantém opções como "mãe", "PAI" ou "chefe antigo" em um padrão visual
- * mais limpo para aparecer depois no campo Relações da timeline.
+ * Exemplo:
+ * mãe -> Mãe
+ * PAI -> Pai
+ * chefe antigo -> Chefe antigo
  */
 function formatRelationshipName(value) {
   const normalizedValue = String(value).trim().toLocaleLowerCase("pt-BR")
@@ -71,7 +73,7 @@ function formatRelationshipName(value) {
  * Normaliza listas vindas de formatos antigos e novos.
  *
  * Aceita array ou string separada por vírgula para manter compatibilidade
- * com pacientes cadastrados antes desta alteração.
+ * com pacientes cadastrados antes das mudanças recentes.
  */
 function normalizeList(value) {
   if (Array.isArray(value)) {
@@ -90,9 +92,6 @@ function normalizeList(value) {
 
 /**
  * Normaliza especificamente os relacionamentos do paciente.
- *
- * Além de aceitar formatos antigos, também aplica a padronização visual
- * com primeira letra maiúscula.
  */
 function normalizeRelationships(value) {
   return normalizeList(value)
@@ -122,11 +121,98 @@ function createInitialFormDataFromPatient(patient) {
   }
 }
 
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  )
+}
+
+function RelationshipSection({
+  relationships,
+  relationshipDraft,
+  onChangeRelationshipDraft,
+  onAddRelationship,
+  onRemoveRelationship,
+  onRelationshipKeyDown,
+}) {
+  return (
+    <section className="mt-5 rounded-3xl border border-violet-100 bg-violet-50/40 p-5 shadow-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-lg font-black text-slate-950">
+            Relacionamentos do paciente
+          </h3>
+
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Esses vínculos aparecerão como opções em Relações ao criar blocos na
+            timeline.
+          </p>
+        </div>
+
+        <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm">
+          {relationships.length} relacionamento
+          {relationships.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          value={relationshipDraft}
+          onChange={(event) => onChangeRelationshipDraft(event.target.value)}
+          onKeyDown={onRelationshipKeyDown}
+          placeholder="Ex: Mãe, Pai, Marido, Chefe"
+          className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+        />
+
+        <button
+          type="button"
+          onClick={onAddRelationship}
+          className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
+        >
+          Adicionar
+        </button>
+      </div>
+
+      {relationships.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {relationships.map((relationship) => (
+            <button
+              key={relationship}
+              type="button"
+              onClick={() => onRemoveRelationship(relationship)}
+              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 shadow-sm transition hover:bg-violet-100"
+              title="Remover relacionamento"
+            >
+              {relationship} ×
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/70 px-4 py-3 text-sm text-slate-500">
+          Nenhum relacionamento cadastrado ainda.
+        </p>
+      )}
+    </section>
+  )
+}
+
 /**
  * Modal de criação e edição de paciente.
  *
- * Os relacionamentos cadastrados aqui passam a ser usados como opções
- * no campo Relações ao criar blocos na timeline do paciente.
+ * Os relacionamentos cadastrados aqui alimentam as opções de Relações
+ * ao criar ou editar blocos clínicos na timeline do paciente.
  */
 export function AddPatientModal({
   isOpen,
@@ -272,17 +358,18 @@ export function AddPatientModal({
               </h2>
 
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
-                Registre os dados principais do paciente e seus relacionamentos
-                importantes para usar depois na timeline clínica.
+                Registre os dados principais, agenda clínica e vínculos
+                importantes do paciente.
               </p>
             </div>
 
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+              aria-label="Fechar modal"
             >
-              Fechar
+              <CloseIcon />
             </button>
           </div>
         </header>
@@ -502,61 +589,21 @@ export function AddPatientModal({
                 />
 
                 <span className="text-xs text-slate-500">
-                  Separe as tags por vírgula. Elas não aparecem no card, mas
-                  continuam úteis para busca.
+                  Separe por vírgula. As tags continuam úteis para busca, mas
+                  não aparecem no card do paciente.
                 </span>
               </label>
             </div>
           </section>
 
-          <section className="mt-5 rounded-3xl border border-violet-100 bg-violet-50/40 p-5 shadow-sm">
-            <h3 className="text-lg font-black text-slate-950">
-              Relacionamentos do paciente
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Cadastre os vínculos que poderão aparecer como opções em Relações
-              ao criar blocos na timeline.
-            </p>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <input
-                value={relationshipDraft}
-                onChange={(event) => setRelationshipDraft(event.target.value)}
-                onKeyDown={handleRelationshipKeyDown}
-                placeholder="Ex: Mãe, Pai, Marido, Chefe"
-                className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-              />
-
-              <button
-                type="button"
-                onClick={handleAddRelationship}
-                className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
-              >
-                Adicionar
-              </button>
-            </div>
-
-            {formData.relationships.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {formData.relationships.map((relationship) => (
-                  <button
-                    key={relationship}
-                    type="button"
-                    onClick={() => handleRemoveRelationship(relationship)}
-                    className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 shadow-sm transition hover:bg-violet-100"
-                    title="Remover relacionamento"
-                  >
-                    {relationship} ×
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/70 px-4 py-3 text-sm text-slate-500">
-                Nenhum relacionamento cadastrado ainda.
-              </p>
-            )}
-          </section>
+          <RelationshipSection
+            relationships={formData.relationships}
+            relationshipDraft={relationshipDraft}
+            onChangeRelationshipDraft={setRelationshipDraft}
+            onAddRelationship={handleAddRelationship}
+            onRemoveRelationship={handleRemoveRelationship}
+            onRelationshipKeyDown={handleRelationshipKeyDown}
+          />
 
           <footer className="sticky bottom-0 -mx-6 -mb-5 mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-5 sm:flex-row sm:justify-end">
             <button
