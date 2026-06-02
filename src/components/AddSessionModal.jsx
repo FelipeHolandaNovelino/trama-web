@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react"
 
-import {
-  availableEmotions,
-  availablePeople,
-  availableTags,
-} from "../data/sessionOptions"
+import { availableEmotions, availablePeople } from "../data/sessionOptions"
 
-function toggleItem(list, item) {
+function toggleItem(list = [], item) {
   if (list.includes(item)) {
     return list.filter((currentItem) => currentItem !== item)
   }
@@ -22,9 +18,16 @@ function formatDateToInput(dateString) {
   }
 
   const [day, month, year] = dateString.split("/")
+
   return `${year}-${month}-${day}`
 }
 
+/**
+ * Cria um rascunho vazio de bloco.
+ *
+ * Tags permanecem como array vazio para compatibilidade com a timeline,
+ * mas não são mais exibidas no modal.
+ */
 function createEmptyBlockDraft() {
   return {
     id: `draft-${Date.now()}-${Math.random()}`,
@@ -42,6 +45,12 @@ function createEmptyBlockDraft() {
   }
 }
 
+/**
+ * Converte um bloco existente em rascunho editável.
+ *
+ * Tags antigas são preservadas internamente para evitar perda de dados
+ * ao editar blocos já existentes.
+ */
 function createDraftFromBlock(block) {
   const firstConnection = block.connections?.[0]
 
@@ -59,6 +68,102 @@ function createDraftFromBlock(block) {
     connectionStrength: firstConnection?.strength || "moderada",
     connectionReason: firstConnection?.reason || "",
   }
+}
+
+/**
+ * Lista de seleção que abre ao clicar.
+ *
+ * Usada para Emoções e Relações.
+ * Permite múltipla seleção sem ocupar espaço no modal o tempo todo.
+ */
+function CollapsibleOptionList({
+  label,
+  description,
+  options,
+  selectedOptions,
+  onToggle,
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  function handleToggleOpen() {
+    setIsOpen((currentState) => !currentState)
+  }
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white">
+      <button
+        type="button"
+        onClick={handleToggleOpen}
+        className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-slate-50"
+      >
+        <div>
+          <p className="text-sm font-bold text-slate-800">{label}</p>
+
+          {description && (
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+              {description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+            {selectedOptions.length} selecionada
+            {selectedOptions.length === 1 ? "" : "s"}
+          </span>
+
+          <span
+            className={`text-sm text-slate-400 transition ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          >
+            ▾
+          </span>
+        </div>
+      </button>
+
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 py-3">
+          {selectedOptions.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onToggle(option)}
+              className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800 transition hover:bg-violet-200"
+              title="Remover seleção"
+            >
+              {option} ×
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isOpen && (
+        <div className="border-t border-slate-100 px-4 py-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {options.map((option) => {
+              const isSelected = selectedOptions.includes(option)
+
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onToggle(option)}
+                  className={`rounded-2xl border px-3 py-2 text-left text-xs font-semibold transition ${
+                    isSelected
+                      ? "border-violet-700 bg-violet-800 text-white shadow-sm"
+                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
+                  }`}
+                >
+                  {option}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  )
 }
 
 function BlockDraftEditor({
@@ -90,22 +195,23 @@ function BlockDraftEditor({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-700">
             Bloco {index + 1}
           </p>
 
-          <h3 className="mt-1 text-lg font-bold text-slate-900">
+          <h4 className="mt-1 text-lg font-black text-slate-950">
             {block.title || "Novo bloco narrativo"}
-          </h3>
+          </h4>
         </div>
 
         {totalBlocks > 1 && (
           <button
+            type="button"
             onClick={onRemove}
-            className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
+            className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
           >
             Remover
           </button>
@@ -122,7 +228,7 @@ function BlockDraftEditor({
             type="date"
             value={block.eventDate}
             onChange={(event) => updateField("eventDate", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
           />
 
           <p className="text-xs text-slate-500">
@@ -138,7 +244,7 @@ function BlockDraftEditor({
           <select
             value={block.type}
             onChange={(event) => updateField("type", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
           >
             <option>Evento</option>
             <option>Insight</option>
@@ -159,7 +265,7 @@ function BlockDraftEditor({
           value={block.title}
           onChange={(event) => updateField("title", event.target.value)}
           placeholder="Ex: Discussão com o chefe"
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
         />
       </label>
 
@@ -169,88 +275,30 @@ function BlockDraftEditor({
         </span>
 
         <textarea
-          rows="4"
+          rows={5}
           value={block.text}
           onChange={(event) => updateField("text", event.target.value)}
           placeholder="Escreva o que surgiu na sessão..."
-          className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+          className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
         />
       </label>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl bg-slate-50 p-4">
-          <p className="text-sm font-medium text-slate-700">Emoções</p>
+      <div className="mt-4 grid gap-3">
+        <CollapsibleOptionList
+          label="Emoções"
+          description="Clique para abrir a lista e selecionar as emoções associadas."
+          options={availableEmotions}
+          selectedOptions={block.emotions}
+          onToggle={(emotion) => toggleDraftItem("emotions", emotion)}
+        />
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {availableEmotions.map((emotion) => {
-              const isSelected = block.emotions.includes(emotion)
-
-              return (
-                <button
-                  key={emotion}
-                  onClick={() => toggleDraftItem("emotions", emotion)}
-                  className={`rounded-full px-3 py-1 text-xs transition ${
-                    isSelected
-                      ? "bg-violet-800 text-white"
-                      : "bg-white text-slate-700 hover:bg-violet-100 hover:text-violet-800"
-                  }`}
-                >
-                  {emotion}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-slate-50 p-4">
-          <p className="text-sm font-medium text-slate-700">
-            Pessoas relacionadas
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {availablePeople.map((person) => {
-              const isSelected = block.people.includes(person)
-
-              return (
-                <button
-                  key={person}
-                  onClick={() => toggleDraftItem("people", person)}
-                  className={`rounded-full px-3 py-1 text-xs transition ${
-                    isSelected
-                      ? "bg-violet-800 text-white"
-                      : "bg-white text-slate-700 hover:bg-violet-100 hover:text-violet-800"
-                  }`}
-                >
-                  {person}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-        <p className="text-sm font-medium text-slate-700">Tags clínicas</p>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {availableTags.map((tag) => {
-            const isSelected = block.tags.includes(tag)
-
-            return (
-              <button
-                key={tag}
-                onClick={() => toggleDraftItem("tags", tag)}
-                className={`rounded-full px-3 py-1 text-xs transition ${
-                  isSelected
-                    ? "bg-violet-800 text-white"
-                    : "bg-white text-slate-700 hover:bg-violet-100 hover:text-violet-800"
-                }`}
-              >
-                #{tag}
-              </button>
-            )
-          })}
-        </div>
+        <CollapsibleOptionList
+          label="Relações"
+          description="Clique para abrir a lista e selecionar as pessoas relacionadas."
+          options={availablePeople}
+          selectedOptions={block.people}
+          onToggle={(person) => toggleDraftItem("people", person)}
+        />
       </div>
 
       <label className="mt-4 block space-y-2">
@@ -276,7 +324,7 @@ function BlockDraftEditor({
         />
       </label>
 
-      <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
+      <section className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
         <p className="text-sm font-semibold text-violet-900">
           Conectar a evento anterior
         </p>
@@ -291,7 +339,7 @@ function BlockDraftEditor({
             onChange={(event) =>
               updateField("connectedBlockId", event.target.value)
             }
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
           >
             <option value="">Nenhum evento conectado</option>
 
@@ -316,7 +364,7 @@ function BlockDraftEditor({
                 onChange={(event) =>
                   updateField("connectionStrength", event.target.value)
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
               >
                 <option value="leve">Leve</option>
                 <option value="moderada">Moderada</option>
@@ -336,7 +384,7 @@ function BlockDraftEditor({
                   updateField("connectionReason", event.target.value)
                 }
                 placeholder="Ex: repetição de sobrecarga"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
               />
             </label>
           </div>
@@ -351,8 +399,8 @@ function BlockDraftEditor({
             com ligação <strong>{block.connectionStrength}</strong>.
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </section>
   )
 }
 
@@ -377,7 +425,9 @@ export function AddSessionModal({
     if (!isOpen) return
 
     if (initialBlock) {
-      setSessionDate(formatDateToInput(initialBlock.sessionDate || initialBlock.date))
+      setSessionDate(
+        formatDateToInput(initialBlock.sessionDate || initialBlock.date)
+      )
       setSessionSummary("")
       setBlocks([createDraftFromBlock(initialBlock)])
       return
@@ -430,6 +480,12 @@ export function AddSessionModal({
     )
   }
 
+  /**
+   * Prepara o bloco final para salvar na timeline.
+   *
+   * Tags não são mais preenchidas pela interface.
+   * Blocos novos recebem tags vazias; blocos antigos preservam tags existentes.
+   */
   function prepareBlock(block) {
     const selectedConnectedBlock = existingBlocks.find(
       (existingBlock) => existingBlock.id === block.connectedBlockId
@@ -457,7 +513,7 @@ export function AddSessionModal({
       text: block.text,
       emotions: block.emotions,
       people: block.people,
-      tags: block.tags,
+      tags: block.tags || [],
       intensity: block.intensity,
       connections,
     }
@@ -524,21 +580,22 @@ export function AddSessionModal({
               {isEditingBlock
                 ? "Editar bloco"
                 : isAddingBlockToExistingSession
-                ? "Adicionar bloco"
-                : "Nova sessão"}
+                  ? "Adicionar bloco"
+                  : "Nova sessão"}
             </p>
 
             <h2 className="mt-3 text-3xl font-bold leading-tight">
               {isEditingBlock
                 ? "Atualizar bloco narrativo"
                 : isAddingBlockToExistingSession
-                ? "Adicionar bloco nesta sessão"
-                : "Registrar sessão com múltiplos blocos"}
+                  ? "Adicionar bloco nesta sessão"
+                  : "Registrar sessão com múltiplos blocos"}
             </h2>
 
             <p className="mt-4 text-sm leading-relaxed text-violet-100">
-              A sessão representa o momento do atendimento. Os blocos representam
-              os acontecimentos, insights e observações relatadas dentro dela.
+              A sessão representa o momento do atendimento. Os blocos
+              representam acontecimentos, insights e observações relatadas
+              dentro dela.
             </p>
 
             <div className="mt-8 rounded-3xl bg-white/10 p-4">
@@ -569,8 +626,8 @@ export function AddSessionModal({
                   {isEditingBlock
                     ? "Editar bloco"
                     : isAddingBlockToExistingSession
-                    ? "Novo bloco para sessão existente"
-                    : "Dados da sessão"}
+                      ? "Novo bloco para sessão existente"
+                      : "Dados da sessão"}
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
@@ -579,8 +636,9 @@ export function AddSessionModal({
               </div>
 
               <button
+                type="button"
                 onClick={handleClose}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-100"
               >
                 Fechar
               </button>
@@ -597,7 +655,7 @@ export function AddSessionModal({
                   value={sessionDate}
                   disabled={isAddingBlockToExistingSession}
                   onChange={(event) => setSessionDate(event.target.value)}
-                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 ${
+                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100 ${
                     isAddingBlockToExistingSession
                       ? "cursor-not-allowed bg-slate-100 text-slate-500"
                       : ""
@@ -620,7 +678,7 @@ export function AddSessionModal({
                   disabled={isAddingBlockToExistingSession}
                   onChange={(event) => setSessionSummary(event.target.value)}
                   placeholder="Ex: limites, sobrecarga e relação com o trabalho"
-                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 ${
+                  className={`w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100 ${
                     isAddingBlockToExistingSession
                       ? "cursor-not-allowed bg-slate-100 text-slate-500"
                       : ""
@@ -646,8 +704,9 @@ export function AddSessionModal({
 
             {!isEditingBlock && !isAddingBlockToExistingSession && (
               <button
+                type="button"
                 onClick={addBlock}
-                className="mt-5 w-full rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 hover:bg-violet-50"
+                className="mt-5 w-full rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-50"
               >
                 + Adicionar outro bloco à sessão
               </button>
@@ -655,21 +714,23 @@ export function AddSessionModal({
 
             <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
               <button
+                type="button"
                 onClick={handleClose}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700 hover:bg-slate-100"
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700 transition hover:bg-slate-100"
               >
                 Cancelar
               </button>
 
               <button
+                type="button"
                 onClick={handleSave}
-                className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-medium text-white hover:bg-violet-900"
+                className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-violet-900"
               >
                 {isEditingBlock
                   ? "Salvar alterações"
                   : isAddingBlockToExistingSession
-                  ? "Adicionar bloco"
-                  : "Salvar sessão"}
+                    ? "Adicionar bloco"
+                    : "Salvar sessão"}
               </button>
             </div>
           </div>
