@@ -139,6 +139,26 @@ function CloseIcon() {
   )
 }
 
+function FormSection({ title, description, children, className = "" }) {
+  return (
+    <section
+      className={`rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`}
+    >
+      <h3 className="text-base font-black text-slate-950 sm:text-lg">
+        {title}
+      </h3>
+
+      {description && (
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+          {description}
+        </p>
+      )}
+
+      {children}
+    </section>
+  )
+}
+
 function RelationshipSection({
   relationships,
   relationshipDraft,
@@ -148,10 +168,10 @@ function RelationshipSection({
   onRelationshipKeyDown,
 }) {
   return (
-    <section className="mt-5 rounded-3xl border border-violet-100 bg-violet-50/40 p-5 shadow-sm">
+    <section className="mt-4 rounded-3xl border border-violet-100 bg-violet-50/40 p-4 shadow-sm sm:mt-5 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-lg font-black text-slate-950">
+        <div className="min-w-0">
+          <h3 className="text-base font-black text-slate-950 sm:text-lg">
             Relacionamentos do paciente
           </h3>
 
@@ -167,13 +187,13 @@ function RelationshipSection({
         </span>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
         <input
           value={relationshipDraft}
           onChange={(event) => onChangeRelationshipDraft(event.target.value)}
           onKeyDown={onRelationshipKeyDown}
           placeholder="Ex: Mãe, Pai, Marido, Chefe"
-          className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+          className="min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
         />
 
         <button
@@ -192,7 +212,7 @@ function RelationshipSection({
               key={relationship}
               type="button"
               onClick={() => onRemoveRelationship(relationship)}
-              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 shadow-sm transition hover:bg-violet-100"
+              className="max-w-full truncate rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 shadow-sm transition hover:bg-violet-100"
               title="Remover relacionamento"
             >
               {relationship} ×
@@ -339,25 +359,25 @@ export function AddPatientModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-0 py-0 sm:items-center sm:px-4 sm:py-4"
       onClick={onClose}
     >
       <section
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-slate-50 shadow-2xl"
+        className="flex h-[96vh] w-full flex-col overflow-hidden rounded-t-[2rem] bg-slate-50 shadow-2xl sm:max-h-[92vh] sm:max-w-5xl sm:rounded-[2rem]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b border-slate-200 bg-white px-6 py-5">
+        <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
                 {isEditing ? "Editar paciente" : "Novo paciente"}
               </p>
 
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-1 line-clamp-2 text-xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-2xl">
                 {isEditing ? "Atualizar cadastro" : "Cadastrar paciente"}
               </h2>
 
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+              <p className="mt-1 line-clamp-2 max-w-2xl text-xs leading-relaxed text-slate-500 sm:text-sm">
                 Registre os dados principais, agenda clínica e vínculos
                 importantes do paciente.
               </p>
@@ -376,24 +396,19 @@ export function AddPatientModal({
 
         <form
           onSubmit={handleSubmit}
-          className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5"
         >
           {formError && (
-            <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+            <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 sm:mb-5">
               {formError}
             </div>
           )}
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black text-slate-950">
-              Identificação
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Dados básicos para reconhecer o paciente dentro do sistema.
-            </p>
-
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <FormSection
+            title="Identificação"
+            description="Dados básicos para reconhecer o paciente dentro do sistema."
+          >
+            <div className="mt-4 grid gap-4 md:grid-cols-2 sm:mt-5">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold text-slate-700">
                   Nome do paciente *
@@ -458,12 +473,10 @@ export function AddPatientModal({
                 />
               </label>
             </div>
-          </section>
+          </FormSection>
 
-          <section className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black text-slate-950">Contato</h3>
-
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <FormSection title="Contato" className="mt-4 sm:mt-5">
+            <div className="mt-4 grid gap-4 md:grid-cols-2 sm:mt-5">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold text-slate-700">
                   E-mail
@@ -490,14 +503,10 @@ export function AddPatientModal({
                 />
               </label>
             </div>
-          </section>
+          </FormSection>
 
-          <section className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black text-slate-950">
-              Agenda clínica
-            </h3>
-
-            <div className="mt-5 grid gap-5 md:grid-cols-3">
+          <FormSection title="Agenda clínica" className="mt-4 sm:mt-5">
+            <div className="mt-4 grid gap-4 md:grid-cols-3 sm:mt-5">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold text-slate-700">
                   Início do acompanhamento
@@ -540,14 +549,10 @@ export function AddPatientModal({
                 />
               </label>
             </div>
-          </section>
+          </FormSection>
 
-          <section className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-black text-slate-950">
-              Síntese clínica inicial
-            </h3>
-
-            <div className="mt-5 grid gap-5">
+          <FormSection title="Síntese clínica inicial" className="mt-4 sm:mt-5">
+            <div className="mt-4 grid gap-4 sm:mt-5">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold text-slate-700">
                   Queixa principal
@@ -594,7 +599,7 @@ export function AddPatientModal({
                 </span>
               </label>
             </div>
-          </section>
+          </FormSection>
 
           <RelationshipSection
             relationships={formData.relationships}
@@ -604,8 +609,10 @@ export function AddPatientModal({
             onRemoveRelationship={handleRemoveRelationship}
             onRelationshipKeyDown={handleRelationshipKeyDown}
           />
+        </form>
 
-          <footer className="sticky bottom-0 -mx-6 -mb-5 mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-6 py-5 sm:flex-row sm:justify-end">
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="grid gap-2 sm:flex sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -615,13 +622,14 @@ export function AddPatientModal({
             </button>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-900"
             >
               {isEditing ? "Salvar alterações" : "Criar paciente"}
             </button>
-          </footer>
-        </form>
+          </div>
+        </footer>
       </section>
     </div>
   )
