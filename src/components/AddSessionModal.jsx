@@ -127,20 +127,20 @@ function CollapsibleOptionList({
       <button
         type="button"
         onClick={() => setIsOpen((currentState) => !currentState)}
-        className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-slate-50"
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition hover:bg-slate-50 sm:gap-4 sm:px-4"
       >
         <div className="min-w-0">
           <p className="text-sm font-bold text-slate-800">{label}</p>
 
           {description && (
-            <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+            <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 sm:line-clamp-1">
               {description}
             </p>
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 sm:px-3">
             {selectedOptions.length}
           </span>
 
@@ -155,13 +155,13 @@ function CollapsibleOptionList({
       </button>
 
       {selectedOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-3">
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-3 py-3 sm:px-4">
           {selectedOptions.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => onToggle(option)}
-              className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800 transition hover:bg-violet-200"
+              className="max-w-full truncate rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800 transition hover:bg-violet-200"
               title="Remover seleção"
             >
               {option} ×
@@ -171,7 +171,7 @@ function CollapsibleOptionList({
       )}
 
       {isOpen && (
-        <div className="border-t border-slate-100 px-4 py-3">
+        <div className="border-t border-slate-100 px-3 py-3 sm:px-4">
           {options.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
               {emptyMessage}
@@ -240,14 +240,14 @@ function BlockDraftEditor({
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <header className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-        <div>
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <header className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-700">
             Bloco {index + 1}
           </p>
 
-          <h4 className="mt-1 text-lg font-black text-slate-950">
+          <h4 className="mt-1 line-clamp-2 text-base font-black text-slate-950 sm:text-lg">
             {block.title || "Novo bloco narrativo"}
           </h4>
         </div>
@@ -256,7 +256,7 @@ function BlockDraftEditor({
           <button
             type="button"
             onClick={onRemove}
-            className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+            className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 sm:w-auto"
           >
             Remover
           </button>
@@ -344,12 +344,12 @@ function BlockDraftEditor({
       </div>
 
       <label className="mt-4 block space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-bold text-slate-700">
             Intensidade emocional
           </span>
 
-          <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800">
+          <span className="shrink-0 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800">
             {block.intensity}/10
           </span>
         </div>
@@ -616,16 +616,16 @@ export function AddSessionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-0 py-0 sm:items-center sm:px-4 sm:py-4"
       onClick={handleClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-slate-50 shadow-2xl"
+        className="flex h-[96vh] w-full flex-col overflow-hidden rounded-t-[2rem] bg-slate-50 shadow-2xl sm:max-h-[92vh] sm:max-w-5xl sm:rounded-[2rem]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b border-slate-200 bg-white px-6 py-5">
+        <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
                 {isEditingBlock
                   ? "Editar bloco"
@@ -634,7 +634,7 @@ export function AddSessionModal({
                     : "Nova sessão"}
               </p>
 
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-1 line-clamp-2 text-xl font-black tracking-tight text-slate-950 sm:mt-2 sm:text-2xl">
                 {isEditingBlock
                   ? "Atualizar bloco narrativo"
                   : isAddingBlockToExistingSession
@@ -642,7 +642,7 @@ export function AddSessionModal({
                     : "Registrar sessão"}
               </h2>
 
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+              <p className="mt-1 line-clamp-2 max-w-2xl text-xs leading-relaxed text-slate-500 sm:text-sm">
                 Organize a sessão e registre blocos narrativos com emoções,
                 relações e conexões clínicas.
               </p>
@@ -659,8 +659,8 @@ export function AddSessionModal({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">
@@ -701,7 +701,7 @@ export function AddSessionModal({
             </div>
           </section>
 
-          <div className="mt-5 space-y-5">
+          <div className="mt-4 space-y-4 sm:mt-5 sm:space-y-5">
             {blocks.map((block, index) => (
               <BlockDraftEditor
                 key={block.id}
@@ -721,7 +721,7 @@ export function AddSessionModal({
             <button
               type="button"
               onClick={addBlock}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-50"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-50 sm:mt-5"
             >
               <PlusIcon />
               Adicionar outro bloco à sessão
@@ -729,26 +729,28 @@ export function AddSessionModal({
           )}
         </div>
 
-        <footer className="flex justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            Cancelar
-          </button>
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="grid gap-2 sm:flex sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancelar
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
-          >
-            {isEditingBlock
-              ? "Salvar alterações"
-              : isAddingBlockToExistingSession
-                ? "Adicionar bloco"
-                : "Salvar sessão"}
-          </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
+            >
+              {isEditingBlock
+                ? "Salvar alterações"
+                : isAddingBlockToExistingSession
+                  ? "Adicionar bloco"
+                  : "Salvar sessão"}
+            </button>
+          </div>
         </footer>
       </div>
     </div>
