@@ -402,6 +402,20 @@ Isso evita que a tela pareça quebrada quando um paciente ainda não possui hist
 
 ---
 
+## Descrição técnica
+
+O Trama foi desenvolvido como um MVP front-end em React, com foco em componentização, organização de estado, persistência local e responsividade.
+
+A aplicação utiliza Vite, JavaScript e Tailwind CSS. Os dados são persistidos no `localStorage`, com timelines individualizadas por paciente. A estrutura do projeto separa responsabilidades entre páginas, componentes, hooks, utils e dados demonstrativos.
+
+Um dos pontos principais da arquitetura é o uso do componente `ClinicalBlockCard`, responsável por padronizar a exibição dos blocos clínicos nos modos Sessões, Emoções, Relações e Espelho.
+
+As regras de agrupamento, resumo e mutação da timeline foram separadas em arquivos utilitários para manter os componentes mais limpos e reutilizáveis.
+
+O projeto também inclui modais responsivos, CRUD local de pacientes, criação de sessões com múltiplos blocos, conexões clínicas entre acontecimentos e diferentes modos de visualização da timeline.
+
+---
+
 ## Responsividade
 
 A responsividade principal do prontuário foi revisada nos componentes mais importantes da timeline.
