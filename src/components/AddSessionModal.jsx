@@ -23,10 +23,10 @@ function formatDateToInput(dateString) {
 }
 
 /**
- * Cria um rascunho vazio de bloco.
+ * Cria um rascunho vazio de bloco clínico.
  *
- * Tags permanecem como array vazio para compatibilidade com a estrutura atual,
- * mas não são mais exibidas no modal.
+ * A propriedade tags permanece como array vazio apenas para compatibilidade
+ * com dados antigos da timeline. Tags não fazem parte da interface atual.
  */
 function createEmptyBlockDraft() {
   return {
@@ -46,10 +46,10 @@ function createEmptyBlockDraft() {
 }
 
 /**
- * Converte um bloco existente em rascunho editável.
+ * Converte um bloco já existente em rascunho editável.
  *
  * Tags antigas são preservadas internamente para evitar perda de dados
- * ao editar blocos criados antes da remoção visual das tags.
+ * ao editar blocos criados antes da remoção visual desse campo.
  */
 function createDraftFromBlock(block) {
   const firstConnection = block.connections?.[0]
@@ -109,7 +109,7 @@ function PlusIcon() {
 /**
  * Lista expansiva de múltipla seleção.
  *
- * Usada para Emoções e Relações. Mantém a tela limpa e só mostra as opções
+ * Usada para Emoções e Relações. Mantém o modal compacto e só mostra as opções
  * quando o usuário decide abrir a lista.
  */
 function CollapsibleOptionList({
@@ -207,7 +207,8 @@ function CollapsibleOptionList({
 /**
  * Editor visual de um bloco narrativo.
  *
- * O componente concentra os campos do bloco, mantendo a sessão mais limpa.
+ * Relações são recebidas pelo paciente aberto, não por uma lista global.
+ * Emoções continuam vindo de sessionOptions.js.
  */
 function BlockDraftEditor({
   block,
@@ -532,8 +533,7 @@ export function AddSessionModal({
   /**
    * Prepara o bloco final para salvar na timeline.
    *
-   * Tags não são mais preenchidas visualmente.
-   * Blocos novos recebem tags vazias; blocos antigos preservam tags existentes.
+   * Blocos novos recebem tags vazias. Blocos antigos preservam tags existentes.
    */
   function prepareBlock(block) {
     const selectedConnectedBlock = existingBlocks.find(
