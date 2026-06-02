@@ -11,8 +11,8 @@ const DEFAULT_PATIENT_ID = "joao-luiz"
 
 export function PatientPage({ selectedPatient, onBackToPatients }) {
   /**
-   * Usa o paciente selecionado pela listagem.
-   * Caso a timeline seja aberta sem seleção, mantém o paciente base do projeto.
+   * Usa o paciente selecionado pela lista ou Home.
+   * Caso a timeline seja aberta sem seleção, mantém o paciente base.
    */
   const patient = selectedPatient || {
     ...basePatient,
@@ -21,7 +21,6 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
 
   /**
    * Cada paciente possui uma timeline própria.
-   * O patientId é enviado ao hook para separar a persistência no localStorage.
    */
   const patientTimelineId = patient.id || DEFAULT_PATIENT_ID
 
@@ -30,10 +29,6 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
   const [targetSession, setTargetSession] = useState(null)
   const [confirmation, setConfirmation] = useState(null)
 
-  /**
-   * Hook central da timeline.
-   * Ele carrega e salva a timeline individual do paciente aberto.
-   */
   const {
     timelineData,
     existingBlocks,
@@ -89,8 +84,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
   }
 
   /**
-   * Abre o modal de confirmação antes de remover um bloco.
-   * A exclusão real só acontece depois da confirmação do usuário.
+   * Confirma antes de remover um bloco.
    */
   function handleDeleteBlock(blockId) {
     setConfirmation({
@@ -105,8 +99,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
   }
 
   /**
-   * Abre o modal de confirmação antes de remover uma sessão inteira.
-   * Todos os blocos da sessão também serão removidos.
+   * Confirma antes de remover uma sessão inteira.
    */
   function handleDeleteSession(sessionId) {
     setConfirmation({
@@ -122,7 +115,6 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
 
   /**
    * Confirma restauração da timeline do paciente atual.
-   * Essa ação não afeta a timeline de outros pacientes.
    */
   function handleResetTimeline() {
     setConfirmation({
@@ -186,6 +178,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
         existingBlocks={existingBlocks}
         initialBlock={editingBlock}
         targetSession={targetSession}
+        relationshipOptions={patient.relationships || []}
       />
 
       <ConfirmModal

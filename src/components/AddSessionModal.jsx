@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { availableEmotions, availablePeople } from "../data/sessionOptions"
+import { availableEmotions } from "../data/sessionOptions"
 
 function toggleItem(list = [], item) {
   if (list.includes(item)) {
@@ -117,6 +117,7 @@ function CollapsibleOptionList({
   description,
   options,
   selectedOptions,
+  emptyMessage = "Nenhuma opção disponível.",
   onToggle,
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -171,26 +172,32 @@ function CollapsibleOptionList({
 
       {isOpen && (
         <div className="border-t border-slate-100 px-4 py-3">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {options.map((option) => {
-              const isSelected = selectedOptions.includes(option)
+          {options.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              {emptyMessage}
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {options.map((option) => {
+                const isSelected = selectedOptions.includes(option)
 
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => onToggle(option)}
-                  className={`rounded-2xl border px-3 py-2 text-left text-xs font-semibold transition ${
-                    isSelected
-                      ? "border-violet-700 bg-violet-800 text-white shadow-sm"
-                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
-                  }`}
-                >
-                  {option}
-                </button>
-              )
-            })}
-          </div>
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => onToggle(option)}
+                    className={`rounded-2xl border px-3 py-2 text-left text-xs font-semibold transition ${
+                      isSelected
+                        ? "border-violet-700 bg-violet-800 text-white shadow-sm"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -208,6 +215,7 @@ function BlockDraftEditor({
   totalBlocks,
   existingBlocks,
   initialBlock,
+  relationshipOptions,
   onChange,
   onRemove,
 }) {
@@ -326,9 +334,10 @@ function BlockDraftEditor({
 
         <CollapsibleOptionList
           label="Relações"
-          description="Abra para selecionar pessoas ou vínculos relacionados."
-          options={availablePeople}
+          description="Abra para selecionar relacionamentos cadastrados no perfil deste paciente."
+          options={relationshipOptions}
           selectedOptions={block.people}
+          emptyMessage="Nenhum relacionamento cadastrado no perfil do paciente."
           onToggle={(person) => toggleDraftItem("people", person)}
         />
       </div>
@@ -452,6 +461,7 @@ export function AddSessionModal({
   existingBlocks = [],
   initialBlock = null,
   targetSession = null,
+  relationshipOptions = [],
 }) {
   const [sessionDate, setSessionDate] = useState("")
   const [sessionSummary, setSessionSummary] = useState("")
@@ -700,6 +710,7 @@ export function AddSessionModal({
                 totalBlocks={blocks.length}
                 existingBlocks={existingBlocks}
                 initialBlock={initialBlock}
+                relationshipOptions={relationshipOptions}
                 onChange={(updatedBlock) => updateBlock(index, updatedBlock)}
                 onRemove={() => removeBlock(index)}
               />
