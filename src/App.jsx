@@ -1,50 +1,27 @@
 import { useState } from "react"
 
 import { Sidebar } from "./components/Sidebar"
+import { HomePage } from "./pages/HomePage"
 import { PatientPage } from "./pages/PatientPage"
 import { PatientsPage } from "./pages/PatientsPage"
 import { usePatientsData } from "./hooks/usePatientsData"
 
-/**
- * Página temporária para abas que ainda não possuem uma tela própria.
- * Mantém a navegação funcional enquanto o MVP evolui por partes.
- */
-function EmptyPage({ title, description }) {
-  return (
-    <main className="mx-auto w-full max-w-[1800px] px-8 py-8">
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-700">
-          Trama
-        </p>
-
-        <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-          {title}
-        </h2>
-
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
-          {description}
-        </p>
-      </section>
-    </main>
-  )
-}
-
 export default function App() {
   /**
-   * Controla a aba ativa da navegação principal.
-   * A aba "Timeline" continua sendo a tela clínica principal do paciente.
+   * Controla a tela ativa da navegação principal.
+   *
+   * A timeline não aparece mais no menu lateral.
+   * Ela é aberta ao selecionar um paciente.
    */
-  const [activePage, setActivePage] = useState("Timeline")
+  const [activePage, setActivePage] = useState("Home")
 
   /**
-   * Guarda o paciente aberto a partir da listagem.
-   * A timeline agora é carregada individualmente pelo id desse paciente.
+   * Guarda o paciente aberto a partir da listagem ou da Home.
    */
   const [selectedPatient, setSelectedPatient] = useState(null)
 
   /**
-   * Centraliza os dados de pacientes fora da página visual.
-   * Isso mantém cadastro, edição, exclusão e estatísticas em um único hook.
+   * Centraliza os dados de pacientes.
    */
   const {
     patients,
@@ -63,9 +40,13 @@ export default function App() {
     setActivePage("Pacientes")
   }
 
+  function handleGoToPatients() {
+    setActivePage("Pacientes")
+  }
+
   /**
-   * Atualiza o paciente na lista e também mantém sincronizado o paciente
-   * aberto na timeline, caso ele seja o mesmo que acabou de ser editado.
+   * Atualiza o paciente na lista e sincroniza o paciente aberto,
+   * caso ele seja o mesmo que acabou de ser editado.
    */
   function handleUpdatePatient(patientId, updatedPatientData) {
     updatePatient(patientId, updatedPatientData)
@@ -84,8 +65,7 @@ export default function App() {
   }
 
   /**
-   * Exclui o paciente da lista e remove a seleção atual caso o paciente
-   * excluído esteja aberto na timeline.
+   * Exclui o paciente e limpa a seleção se ele estiver aberto.
    */
   function handleDeletePatient(patientId) {
     deletePatient(patientId)
@@ -100,6 +80,17 @@ export default function App() {
   }
 
   function renderActivePage() {
+    if (activePage === "Home") {
+      return (
+        <HomePage
+          patients={patients}
+          patientStats={patientStats}
+          onGoToPatients={handleGoToPatients}
+          onOpenPatient={handleOpenPatient}
+        />
+      )
+    }
+
     if (activePage === "Pacientes") {
       return (
         <PatientsPage
@@ -122,52 +113,18 @@ export default function App() {
       )
     }
 
-    if (activePage === "Sessões") {
-      return (
-        <EmptyPage
-          title="Sessões"
-          description="Esta área será usada futuramente para uma visão geral das sessões, separada do prontuário individual do paciente."
-        />
-      )
-    }
-
-    if (activePage === "Conexões") {
-      return (
-        <EmptyPage
-          title="Conexões"
-          description="Esta área poderá reunir conexões clínicas entre acontecimentos, emoções, relações e padrões observados."
-        />
-      )
-    }
-
-    if (activePage === "Tags") {
-      return (
-        <EmptyPage
-          title="Tags"
-          description="Esta área poderá organizar marcadores clínicos usados nos blocos da timeline."
-        />
-      )
-    }
-
-    if (activePage === "Relatórios") {
-      return (
-        <EmptyPage
-          title="Relatórios"
-          description="Esta área poderá concentrar relatórios, resumos clínicos e exportações futuras."
-        />
-      )
-    }
-
     return (
-      <EmptyPage
-        title="Configurações"
-        description="Esta área poderá reunir preferências do sistema, conta profissional e ajustes de segurança."
+      <HomePage
+        patients={patients}
+        patientStats={patientStats}
+        onGoToPatients={handleGoToPatients}
+        onOpenPatient={handleOpenPatient}
       />
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 xl:pl-72">
       <Sidebar activePage={activePage} onChangePage={setActivePage} />
 
       {renderActivePage()}
