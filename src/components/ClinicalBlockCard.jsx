@@ -87,6 +87,26 @@ function HeartIcon({ className = "h-4 w-4" }) {
   )
 }
 
+function UsersIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
 /**
  * Formata datas salvas como YYYY-MM-DD para DD/MM/YYYY.
  */
@@ -106,11 +126,59 @@ function formatDate(dateValue) {
   return `${day}/${month}/${year}`
 }
 
+function InfoPill({ children, className = "" }) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold shadow-sm sm:px-3 sm:text-xs ${className}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+function ChipList({ title, icon, items = [], tone = "violet", emptyLabel }) {
+  const chipClassName =
+    tone === "indigo"
+      ? "text-indigo-800"
+      : "text-violet-800"
+
+  return (
+    <div className="min-w-0">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-xs">
+        {icon}
+        {title}
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {items.length > 0 ? (
+          items.slice(0, 4).map((item) => (
+            <span
+              key={item}
+              className={`max-w-full truncate rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold shadow-sm ${chipClassName}`}
+              title={item}
+            >
+              {item}
+            </span>
+          ))
+        ) : (
+          <span className="text-xs text-slate-400">{emptyLabel}</span>
+        )}
+
+        {items.length > 4 && (
+          <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm">
+            +{items.length - 4}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /**
  * Card clínico padronizado para blocos da timeline.
  *
- * Este componente centraliza o visual usado em diferentes modos da timeline,
- * evitando estilos duplicados em Emoções, Relações, Sessões e Espelho.
+ * Usado nos modos Sessões, Emoções, Relações e Espelho. A responsividade foi
+ * pensada para manter o card legível em celular sem quebrar o layout.
  */
 export function ClinicalBlockCard({
   block,
@@ -151,46 +219,48 @@ export function ClinicalBlockCard({
       tabIndex={0}
       onClick={handleOpenBlock}
       onKeyDown={handleKeyboardOpen}
-      className={`group relative cursor-pointer overflow-hidden rounded-3xl border p-4 outline-none transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-sm focus-visible:ring-4 focus-visible:ring-violet-100 ${typeStyle.card}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl border p-3 outline-none transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-sm focus-visible:ring-4 focus-visible:ring-violet-100 sm:rounded-3xl sm:p-4 ${typeStyle.card}`}
     >
       <span
-        className={`absolute left-0 top-0 h-full w-1.5 ${typeStyle.accent}`}
+        className={`absolute left-0 top-0 h-full w-1 sm:w-1.5 ${typeStyle.accent}`}
         aria-hidden="true"
       />
 
       <div className="pl-2">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">
-                <CalendarIcon className="h-3.5 w-3.5" />
-                {formatDate(block.eventDate || block.date)}
-              </span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <InfoPill className="text-slate-500">
+                <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {formatDate(block.eventDate || block.date)}
+                </span>
+              </InfoPill>
 
               {block.type && (
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${typeStyle.pill}`}
-                >
-                  {block.type}
-                </span>
+                <InfoPill className={typeStyle.pill}>
+                  <span className="truncate">{block.type}</span>
+                </InfoPill>
               )}
 
               {hasConnections && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm">
-                  <ConnectionIcon className="h-3.5 w-3.5" />
-                  {connectionsCount} conexão
-                  {connectionsCount !== 1 ? "ões" : ""}
-                </span>
+                <InfoPill className="bg-indigo-100 text-indigo-800">
+                  <ConnectionIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {connectionsCount} conexão
+                    {connectionsCount !== 1 ? "ões" : ""}
+                  </span>
+                </InfoPill>
               )}
             </div>
 
-            <h4 className="mt-3 line-clamp-1 text-base font-black text-slate-950">
+            <h4 className="mt-3 line-clamp-2 text-sm font-black leading-snug text-slate-950 sm:line-clamp-1 sm:text-base">
               {block.title || "Acontecimento sem título"}
             </h4>
           </div>
 
           <span
-            className={`rounded-full px-3 py-1 text-xs font-black shadow-sm ${
+            className={`w-fit rounded-full px-3 py-1 text-xs font-black shadow-sm sm:shrink-0 ${
               isHighIntensity
                 ? "bg-violet-800 text-white"
                 : "bg-white/80 text-slate-700"
@@ -205,56 +275,25 @@ export function ClinicalBlockCard({
         </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-              <HeartIcon className="h-3.5 w-3.5" />
-              Emoções
-            </p>
+          <ChipList
+            title="Emoções"
+            icon={<HeartIcon className="h-3.5 w-3.5 shrink-0" />}
+            items={block.emotions || []}
+            tone="violet"
+            emptyLabel="Nenhuma emoção registrada"
+          />
 
-            <div className="flex flex-wrap gap-1.5">
-              {(block.emotions || []).length > 0 ? (
-                (block.emotions || []).slice(0, 4).map((emotion) => (
-                  <span
-                    key={emotion}
-                    className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-violet-800 shadow-sm"
-                  >
-                    {emotion}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-slate-400">
-                  Nenhuma emoção registrada
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-              Relações
-            </p>
-
-            <div className="flex flex-wrap gap-1.5">
-              {(block.people || []).length > 0 ? (
-                (block.people || []).slice(0, 4).map((person) => (
-                  <span
-                    key={person}
-                    className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 shadow-sm"
-                  >
-                    {person}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-slate-400">
-                  Nenhuma relação registrada
-                </span>
-              )}
-            </div>
-          </div>
+          <ChipList
+            title="Relações"
+            icon={<UsersIcon className="h-3.5 w-3.5 shrink-0" />}
+            items={block.people || []}
+            tone="indigo"
+            emptyLabel="Nenhuma relação registrada"
+          />
         </div>
 
         {showActions && (
-          <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/70 pt-3">
+          <div className="mt-4 grid grid-cols-1 gap-2 border-t border-white/70 pt-3 sm:flex sm:flex-wrap sm:justify-end">
             <button
               type="button"
               onClick={(event) => {
