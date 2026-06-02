@@ -148,10 +148,12 @@ function InfoPill({ icon, label, value }) {
   if (!value) return null
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm sm:px-3 sm:text-xs">
       {icon}
-      <span className="text-slate-400">{label}:</span>
-      <strong className="font-bold text-slate-800">{value}</strong>
+
+      <span className="shrink-0 text-slate-400">{label}:</span>
+
+      <strong className="truncate font-bold text-slate-800">{value}</strong>
     </span>
   )
 }
@@ -164,7 +166,7 @@ function ChipGroup({ title, icon, items = [], tone = "violet", emptyLabel }) {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+      <p className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:text-xs">
         {icon}
         {title}
       </p>
@@ -174,7 +176,8 @@ function ChipGroup({ title, icon, items = [], tone = "violet", emptyLabel }) {
           {items.map((item) => (
             <span
               key={item}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClassName}`}
+              title={item}
+              className={`max-w-full truncate rounded-full px-3 py-1 text-xs font-semibold ${toneClassName}`}
             >
               {item}
             </span>
@@ -200,20 +203,20 @@ function ConnectionCard({ connection, onOpenConnectedBlock }) {
       onClick={handleOpenConnection}
       className="w-full rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-left transition hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-indigo-600">
-            <ConnectionIcon className="h-3.5 w-3.5" />
+          <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600 sm:text-xs">
+            <ConnectionIcon className="h-3.5 w-3.5 shrink-0" />
             Conexão clínica
           </p>
 
-          <h4 className="mt-2 line-clamp-1 text-sm font-black text-slate-950">
+          <h4 className="mt-2 line-clamp-2 text-sm font-black text-slate-950 sm:line-clamp-1">
             {connection.targetTitle || "Bloco conectado"}
           </h4>
         </div>
 
         {connection.strength && (
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+          <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
             {connection.strength}
           </span>
         )}
@@ -247,24 +250,24 @@ export function TimelineBlockModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-0 py-0 sm:items-center sm:px-4 sm:py-4"
       onClick={onClose}
     >
       <article
-        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] bg-slate-50 shadow-2xl"
+        className="flex h-[96vh] w-full flex-col overflow-hidden rounded-t-[2rem] bg-slate-50 shadow-2xl sm:max-h-[92vh] sm:max-w-4xl sm:rounded-[2rem]"
         onClick={(event) => event.stopPropagation()}
       >
         <header
-          className={`relative overflow-hidden border-b px-6 py-5 ${typeStyle.card}`}
+          className={`relative shrink-0 overflow-hidden border-b px-4 py-4 sm:px-6 sm:py-5 ${typeStyle.card}`}
         >
           <span
-            className={`absolute left-0 top-0 h-full w-1.5 ${typeStyle.accent}`}
+            className={`absolute left-0 top-0 h-full w-1 sm:w-1.5 ${typeStyle.accent}`}
             aria-hidden="true"
           />
 
           <div className="pl-2">
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
                     Acontecimento clínico
@@ -272,7 +275,8 @@ export function TimelineBlockModal({
 
                   {block.type && (
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${typeStyle.pill}`}
+                      className={`max-w-full truncate rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${typeStyle.pill}`}
+                      title={block.type}
                     >
                       {block.type}
                     </span>
@@ -280,32 +284,32 @@ export function TimelineBlockModal({
 
                   {connections.length > 0 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm">
-                      <ConnectionIcon className="h-3.5 w-3.5" />
+                      <ConnectionIcon className="h-3.5 w-3.5 shrink-0" />
                       {connections.length} conexão
                       {connections.length !== 1 ? "ões" : ""}
                     </span>
                   )}
                 </div>
 
-                <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 line-clamp-3 text-xl font-black leading-tight tracking-tight text-slate-950 sm:line-clamp-2 sm:text-2xl">
                   {block.title || "Acontecimento sem título"}
                 </h2>
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <InfoPill
-                    icon={<CalendarIcon className="h-3.5 w-3.5" />}
+                    icon={<CalendarIcon className="h-3.5 w-3.5 shrink-0" />}
                     label="Acontecimento"
                     value={formatDate(block.eventDate || block.date)}
                   />
 
                   <InfoPill
-                    icon={<CalendarIcon className="h-3.5 w-3.5" />}
+                    icon={<CalendarIcon className="h-3.5 w-3.5 shrink-0" />}
                     label="Sessão"
                     value={formatDate(block.sessionDate)}
                   />
 
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black shadow-sm ${
+                    className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-black shadow-sm ${
                       isHighIntensity
                         ? "bg-violet-800 text-white"
                         : "bg-white/80 text-slate-700"
@@ -328,8 +332,8 @@ export function TimelineBlockModal({
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
               Narrativa
             </p>
@@ -342,7 +346,7 @@ export function TimelineBlockModal({
           <section className="mt-4 grid gap-4 lg:grid-cols-2">
             <ChipGroup
               title="Emoções"
-              icon={<HeartIcon className="h-3.5 w-3.5" />}
+              icon={<HeartIcon className="h-3.5 w-3.5 shrink-0" />}
               items={block.emotions || []}
               tone="violet"
               emptyLabel="Nenhuma emoção registrada."
@@ -350,16 +354,16 @@ export function TimelineBlockModal({
 
             <ChipGroup
               title="Relações"
-              icon={<UsersIcon className="h-3.5 w-3.5" />}
+              icon={<UsersIcon className="h-3.5 w-3.5 shrink-0" />}
               items={block.people || []}
               tone="indigo"
               emptyLabel="Nenhuma relação registrada."
             />
           </section>
 
-          <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <div>
+          <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
                   Conexões clínicas
                 </p>
@@ -400,14 +404,16 @@ export function TimelineBlockModal({
           </section>
         </main>
 
-        <footer className="flex justify-end border-t border-slate-200 bg-white px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
-          >
-            Fechar
-          </button>
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="grid gap-2 sm:flex sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
+            >
+              Fechar
+            </button>
+          </div>
         </footer>
       </article>
     </div>
