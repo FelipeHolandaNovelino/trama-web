@@ -69,9 +69,11 @@ Home
 
 A Home é a tela inicial do profissional.
 
-Ela exibe:
+Ela foi revisada visualmente para ficar mais alinhada com a identidade atual do Trama.
 
-- visão geral simples;
+A tela exibe:
+
+- visão geral do profissional;
 - indicadores pequenos:
   - pacientes;
   - em acompanhamento;
@@ -80,6 +82,9 @@ Ela exibe:
   - retornos a definir;
   - primeira sessão pendente;
   - triagens em andamento;
+- bloco **Atenção clínica**:
+  - retornos sem data;
+  - timelines ainda vazias;
 - próximas sessões;
 - pacientes recentes;
 - acesso rápido à lista de pacientes.
@@ -418,6 +423,33 @@ Melhorias aplicadas:
 
 ---
 
+## Responsividade dos modais
+
+Os principais modais do fluxo clínico foram revisados para funcionar melhor em telas menores.
+
+Modais revisados:
+
+```txt
+AddSessionModal
+AddPatientModal
+SessionModal
+TimelineBlockModal
+```
+
+Melhorias aplicadas:
+
+- abertura como painel quase em tela cheia no mobile;
+- cabeçalhos mais compactos;
+- rolagem interna segura;
+- rodapés fixos;
+- botões em largura total no mobile;
+- campos com melhor quebra em telas pequenas;
+- listas expansivas mais legíveis;
+- conexões clínicas mais acessíveis;
+- leitura completa do bloco preservada em telas menores.
+
+---
+
 ## Dados demonstrativos
 
 O projeto possui um arquivo central de seeds:
@@ -506,7 +538,7 @@ Sidebar.jsx
 → renderiza menu lateral com Home e Pacientes
 
 HomePage.jsx
-→ mostra visão geral do profissional
+→ mostra visão geral do profissional, pontos de atenção e acessos rápidos
 
 PatientsPage.jsx
 → controla listagem, busca, filtros e modais de pacientes
@@ -630,7 +662,9 @@ O projeto já possui:
 
 - navegação com Home e Pacientes;
 - Home com visão geral do profissional;
+- Home visualmente refinada;
 - bloco Para acompanhar;
+- bloco Atenção clínica;
 - próximas sessões;
 - pacientes recentes;
 - CRUD local de pacientes;
@@ -653,6 +687,7 @@ O projeto já possui:
 - cards clínicos padronizados com `ClinicalBlockCard`;
 - modal de bloco refinado;
 - revisão responsiva dos principais componentes da timeline;
+- revisão responsiva dos principais modais;
 - seed demonstrativo para Ana Luiza;
 - persistência local.
 
@@ -675,12 +710,12 @@ Essa limpeza reduz duplicação visual e mantém a estrutura do projeto mais sim
 
 ### Curto prazo
 
-- Revisar responsividade de modais em telas menores.
+- Fazer rodada de teste geral do MVP.
+- Revisar consistência visual da página de pacientes após as mudanças da Home e timeline.
 - Melhorar fluxo de criação de relacionamentos dentro do paciente.
 - Melhorar edição do paciente dentro do prontuário.
-- Revisar opções clínicas do modal de sessão.
 - Melhorar estados vazios dos modos Emoções, Relações e Espelho.
-- Revisar consistência visual da Home após as mudanças da timeline.
+- Revisar textos e microcopy do sistema.
 
 ### Médio prazo
 
