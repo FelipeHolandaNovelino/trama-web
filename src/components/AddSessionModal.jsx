@@ -25,7 +25,7 @@ function formatDateToInput(dateString) {
 /**
  * Cria um rascunho vazio de bloco.
  *
- * Tags permanecem como array vazio para compatibilidade com a timeline,
+ * Tags permanecem como array vazio para compatibilidade com a estrutura atual,
  * mas não são mais exibidas no modal.
  */
 function createEmptyBlockDraft() {
@@ -49,7 +49,7 @@ function createEmptyBlockDraft() {
  * Converte um bloco existente em rascunho editável.
  *
  * Tags antigas são preservadas internamente para evitar perda de dados
- * ao editar blocos já existentes.
+ * ao editar blocos criados antes da remoção visual das tags.
  */
 function createDraftFromBlock(block) {
   const firstConnection = block.connections?.[0]
@@ -70,11 +70,47 @@ function createDraftFromBlock(block) {
   }
 }
 
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
 /**
- * Lista de seleção que abre ao clicar.
+ * Lista expansiva de múltipla seleção.
  *
- * Usada para Emoções e Relações.
- * Permite múltipla seleção sem ocupar espaço no modal o tempo todo.
+ * Usada para Emoções e Relações. Mantém a tela limpa e só mostra as opções
+ * quando o usuário decide abrir a lista.
  */
 function CollapsibleOptionList({
   label,
@@ -85,22 +121,18 @@ function CollapsibleOptionList({
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
-  function handleToggleOpen() {
-    setIsOpen((currentState) => !currentState)
-  }
-
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <button
         type="button"
-        onClick={handleToggleOpen}
+        onClick={() => setIsOpen((currentState) => !currentState)}
         className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-slate-50"
       >
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-bold text-slate-800">{label}</p>
 
           {description && (
-            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+            <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
               {description}
             </p>
           )}
@@ -108,8 +140,7 @@ function CollapsibleOptionList({
 
         <div className="flex shrink-0 items-center gap-3">
           <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-            {selectedOptions.length} selecionada
-            {selectedOptions.length === 1 ? "" : "s"}
+            {selectedOptions.length}
           </span>
 
           <span
@@ -123,7 +154,7 @@ function CollapsibleOptionList({
       </button>
 
       {selectedOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 py-3">
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-3">
           {selectedOptions.map((option) => (
             <button
               key={option}
@@ -140,7 +171,7 @@ function CollapsibleOptionList({
 
       {isOpen && (
         <div className="border-t border-slate-100 px-4 py-3">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {options.map((option) => {
               const isSelected = selectedOptions.includes(option)
 
@@ -166,6 +197,11 @@ function CollapsibleOptionList({
   )
 }
 
+/**
+ * Editor visual de um bloco narrativo.
+ *
+ * O componente concentra os campos do bloco, mantendo a sessão mais limpa.
+ */
 function BlockDraftEditor({
   block,
   index,
@@ -196,7 +232,7 @@ function BlockDraftEditor({
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
+      <header className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-700">
             Bloco {index + 1}
@@ -216,9 +252,9 @@ function BlockDraftEditor({
             Remover
           </button>
         )}
-      </div>
+      </header>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-700">
             Data do acontecimento
@@ -228,12 +264,8 @@ function BlockDraftEditor({
             type="date"
             value={block.eventDate}
             onChange={(event) => updateField("eventDate", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
           />
-
-          <p className="text-xs text-slate-500">
-            Quando isso aconteceu na vida do paciente.
-          </p>
         </label>
 
         <label className="space-y-2">
@@ -265,7 +297,7 @@ function BlockDraftEditor({
           value={block.title}
           onChange={(event) => updateField("title", event.target.value)}
           placeholder="Ex: Discussão com o chefe"
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
         />
       </label>
 
@@ -275,18 +307,18 @@ function BlockDraftEditor({
         </span>
 
         <textarea
-          rows={5}
+          rows={4}
           value={block.text}
           onChange={(event) => updateField("text", event.target.value)}
           placeholder="Escreva o que surgiu na sessão..."
-          className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+          className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
         />
       </label>
 
       <div className="mt-4 grid gap-3">
         <CollapsibleOptionList
           label="Emoções"
-          description="Clique para abrir a lista e selecionar as emoções associadas."
+          description="Abra para selecionar as emoções associadas ao bloco."
           options={availableEmotions}
           selectedOptions={block.emotions}
           onToggle={(emotion) => toggleDraftItem("emotions", emotion)}
@@ -294,16 +326,16 @@ function BlockDraftEditor({
 
         <CollapsibleOptionList
           label="Relações"
-          description="Clique para abrir a lista e selecionar as pessoas relacionadas."
+          description="Abra para selecionar pessoas ou vínculos relacionados."
           options={availablePeople}
           selectedOptions={block.people}
           onToggle={(person) => toggleDraftItem("people", person)}
         />
       </div>
 
-      <label className="mt-4 block space-y-2">
+      <label className="mt-4 block space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-sm font-bold text-slate-700">
             Intensidade emocional
           </span>
 
@@ -324,10 +356,17 @@ function BlockDraftEditor({
         />
       </label>
 
-      <section className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-        <p className="text-sm font-semibold text-violet-900">
-          Conectar a evento anterior
-        </p>
+      <section className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
+        <div>
+          <p className="text-sm font-bold text-violet-900">
+            Conectar a evento anterior
+          </p>
+
+          <p className="mt-0.5 text-xs text-violet-700/70">
+            Use quando este bloco retoma ou aprofunda um acontecimento já
+            registrado.
+          </p>
+        </div>
 
         <label className="mt-4 block space-y-2">
           <span className="text-sm font-medium text-slate-700">
@@ -483,7 +522,7 @@ export function AddSessionModal({
   /**
    * Prepara o bloco final para salvar na timeline.
    *
-   * Tags não são mais preenchidas pela interface.
+   * Tags não são mais preenchidas visualmente.
    * Blocos novos recebem tags vazias; blocos antigos preservam tags existentes.
    */
   function prepareBlock(block) {
@@ -567,84 +606,52 @@ export function AddSessionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-6 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-4"
       onClick={handleClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] bg-slate-50 shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-slate-50 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="grid min-h-0 grid-cols-1 lg:grid-cols-[320px_1fr]">
-          <aside className="bg-gradient-to-b from-violet-800 to-slate-950 p-7 text-white">
-            <p className="text-sm font-semibold text-violet-200">
-              {isEditingBlock
-                ? "Editar bloco"
-                : isAddingBlockToExistingSession
-                  ? "Adicionar bloco"
-                  : "Nova sessão"}
-            </p>
-
-            <h2 className="mt-3 text-3xl font-bold leading-tight">
-              {isEditingBlock
-                ? "Atualizar bloco narrativo"
-                : isAddingBlockToExistingSession
-                  ? "Adicionar bloco nesta sessão"
-                  : "Registrar sessão com múltiplos blocos"}
-            </h2>
-
-            <p className="mt-4 text-sm leading-relaxed text-violet-100">
-              A sessão representa o momento do atendimento. Os blocos
-              representam acontecimentos, insights e observações relatadas
-              dentro dela.
-            </p>
-
-            <div className="mt-8 rounded-3xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-wide text-violet-200">
-                Estrutura
+        <header className="border-b border-slate-200 bg-white px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
+                {isEditingBlock
+                  ? "Editar bloco"
+                  : isAddingBlockToExistingSession
+                    ? "Adicionar bloco"
+                    : "Nova sessão"}
               </p>
 
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="rounded-2xl bg-white/10 p-3">
-                  Data da sessão: {sessionDate || "não definida"}
-                </div>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                {isEditingBlock
+                  ? "Atualizar bloco narrativo"
+                  : isAddingBlockToExistingSession
+                    ? "Adicionar bloco à sessão"
+                    : "Registrar sessão"}
+              </h2>
 
-                <div className="rounded-2xl bg-white/10 p-3">
-                  {blocks.length} bloco{blocks.length > 1 ? "s" : ""} em edição
-                </div>
-
-                <div className="rounded-2xl bg-white/10 p-3">
-                  Espelho usa a data do acontecimento
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <div className="min-h-0 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900">
-                  {isEditingBlock
-                    ? "Editar bloco"
-                    : isAddingBlockToExistingSession
-                      ? "Novo bloco para sessão existente"
-                      : "Dados da sessão"}
-                </h3>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Organize o atendimento e adicione os blocos narrativos.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-100"
-              >
-                Fechar
-              </button>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+                Organize a sessão e registre blocos narrativos com emoções,
+                relações e conexões clínicas.
+              </p>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+              aria-label="Fechar modal"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">
                   Data da sessão
@@ -661,10 +668,6 @@ export function AddSessionModal({
                       : ""
                   }`}
                 />
-
-                <p className="text-xs text-slate-500">
-                  Quando o paciente relatou esses conteúdos.
-                </p>
               </label>
 
               <label className="space-y-2">
@@ -686,55 +689,56 @@ export function AddSessionModal({
                 />
               </label>
             </div>
+          </section>
 
-            <div className="mt-6 space-y-5">
-              {blocks.map((block, index) => (
-                <BlockDraftEditor
-                  key={block.id}
-                  block={block}
-                  index={index}
-                  totalBlocks={blocks.length}
-                  existingBlocks={existingBlocks}
-                  initialBlock={initialBlock}
-                  onChange={(updatedBlock) => updateBlock(index, updatedBlock)}
-                  onRemove={() => removeBlock(index)}
-                />
-              ))}
-            </div>
-
-            {!isEditingBlock && !isAddingBlockToExistingSession && (
-              <button
-                type="button"
-                onClick={addBlock}
-                className="mt-5 w-full rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-50"
-              >
-                + Adicionar outro bloco à sessão
-              </button>
-            )}
-
-            <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700 transition hover:bg-slate-100"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSave}
-                className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-medium text-white transition hover:bg-violet-900"
-              >
-                {isEditingBlock
-                  ? "Salvar alterações"
-                  : isAddingBlockToExistingSession
-                    ? "Adicionar bloco"
-                    : "Salvar sessão"}
-              </button>
-            </div>
+          <div className="mt-5 space-y-5">
+            {blocks.map((block, index) => (
+              <BlockDraftEditor
+                key={block.id}
+                block={block}
+                index={index}
+                totalBlocks={blocks.length}
+                existingBlocks={existingBlocks}
+                initialBlock={initialBlock}
+                onChange={(updatedBlock) => updateBlock(index, updatedBlock)}
+                onRemove={() => removeBlock(index)}
+              />
+            ))}
           </div>
+
+          {!isEditingBlock && !isAddingBlockToExistingSession && (
+            <button
+              type="button"
+              onClick={addBlock}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-violet-300 bg-white px-5 py-4 text-sm font-semibold text-violet-800 transition hover:bg-violet-50"
+            >
+              <PlusIcon />
+              Adicionar outro bloco à sessão
+            </button>
+          )}
         </div>
+
+        <footer className="flex justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-2xl bg-violet-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-900"
+          >
+            {isEditingBlock
+              ? "Salvar alterações"
+              : isAddingBlockToExistingSession
+                ? "Adicionar bloco"
+                : "Salvar sessão"}
+          </button>
+        </footer>
       </div>
     </div>
   )
