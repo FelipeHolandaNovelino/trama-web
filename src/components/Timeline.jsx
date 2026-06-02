@@ -17,7 +17,7 @@ const timelineModes = [
   {
     id: "chronological",
     label: "Sessões",
-    description: "Histórico clínico organizado por ano, mês, sessões e blocos",
+    description: "Histórico clínico por ano, mês, sessões e blocos",
   },
   {
     id: "emotional",
@@ -32,11 +32,16 @@ const timelineModes = [
   {
     id: "mirror",
     label: "Espelho",
-    description:
-      "Acontecimentos organizados pela data em que ocorreram na vida do paciente",
+    description: "Acontecimentos pela data real na vida do paciente",
   },
 ]
 
+/**
+ * Controla as quatro visualizações principais da timeline clínica.
+ *
+ * A responsabilidade deste componente é distribuir os dados para calendário,
+ * agrupamentos e espelho, além de controlar os modais de sessão e bloco.
+ */
 export function Timeline({
   timelineData,
   onCreateSession,
@@ -48,7 +53,7 @@ export function Timeline({
 }) {
   /**
    * Lista de anos disponíveis na timeline atual.
-   * Como pacientes sem seed começam vazios, esse valor pode iniciar sem anos.
+   * Pacientes sem sessões podem começar sem nenhum ano disponível.
    */
   const years = useMemo(() => getAvailableYears(timelineData), [timelineData])
 
@@ -86,7 +91,7 @@ export function Timeline({
   }, [selectedYear, timelineData, years])
 
   /**
-   * Lista única de blocos usada por todas as visões clínicas.
+   * Lista única de blocos usada pelas visões clínicas.
    */
   const allBlocks = useMemo(() => {
     return getAllBlocks(timelineData)
@@ -95,7 +100,7 @@ export function Timeline({
   const hasTimelineContent = allBlocks.length > 0
 
   /**
-   * Índice usado para abrir blocos conectados dentro do modal.
+   * Índice usado para abrir blocos conectados dentro dos modais.
    */
   const blocksById = useMemo(() => {
     return getBlocksById(allBlocks)
@@ -162,19 +167,23 @@ export function Timeline({
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h3 className="text-xl font-black text-slate-950">
-            Sessões do paciente
-          </h3>
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-base font-black tracking-tight text-slate-950">
+              Timeline clínica
+            </h3>
 
-          <p className="mt-1 text-sm text-slate-500">
-            {currentMode?.description}
-          </p>
+            <span className="hidden text-slate-300 sm:inline">·</span>
+
+            <p className="text-sm text-slate-500">
+              {currentMode?.description}
+            </p>
+          </div>
         </div>
 
-        <div className="flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="flex w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/60 p-1 lg:w-auto">
           {timelineModes.map((mode) => {
             const isActive = selectedMode === mode.id
 
@@ -183,10 +192,10 @@ export function Timeline({
                 key={mode.id}
                 type="button"
                 onClick={() => setSelectedMode(mode.id)}
-                className={`shrink-0 px-4 py-2.5 text-sm transition sm:px-5 ${
+                className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition lg:flex-none ${
                   isActive
-                    ? "bg-violet-700 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
+                    ? "bg-white text-violet-700 shadow-sm"
+                    : "text-slate-500 hover:bg-white/70 hover:text-slate-800"
                 }`}
               >
                 {mode.label}
@@ -196,7 +205,7 @@ export function Timeline({
         </div>
       </header>
 
-      <div className="mt-5">
+      <div className="mt-4">
         {!hasTimelineContent ? (
           <TimelineEmptyState onCreateSession={onCreateSession} />
         ) : (
@@ -262,4 +271,4 @@ export function Timeline({
       />
     </section>
   )
-} 
+}

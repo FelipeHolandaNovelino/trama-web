@@ -155,7 +155,7 @@ export function PatientPage({ selectedPatient, onBackToPatients }) {
         onBackToPatients={onBackToPatients}
       />
 
-      <div className="mt-6">
+      <div className="mt-4">
         <Timeline
           timelineData={timelineData}
           onCreateSession={handleOpenAddSession}
