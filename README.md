@@ -95,22 +95,27 @@ A Home foi pensada para ser uma tela útil no início do trabalho, sem excesso d
 
 ### Pacientes
 
+A página de pacientes foi revisada visualmente para ficar mais alinhada com a Home, a Timeline e os modais responsivos.
+
 A área de pacientes possui:
 
-- listagem de pacientes;
-- layout horizontal no desktop;
-- layout responsivo em tablet e mobile;
+- topo visual refinado;
+- botão **Novo paciente** em destaque;
+- busca por nome, queixa, status ou descrição;
+- filtro por status;
+- limpeza rápida de filtros;
+- listagem responsiva de pacientes;
 - cadastro de novo paciente;
 - edição de paciente;
 - exclusão com confirmação;
-- busca;
-- filtro por status;
 - abertura do paciente ao clicar no card inteiro;
-- ações internas de editar, excluir e abrir;
+- ações internas de abrir, editar e excluir;
+- estado vazio para lista sem resultados;
 - resumo da timeline diretamente no card.
 
 O card de paciente mostra:
 
+- iniciais do paciente;
 - nome;
 - idade;
 - queixa principal;
@@ -120,7 +125,8 @@ O card de paciente mostra:
 - quantidade de blocos;
 - quantidade de conexões clínicas;
 - última sessão;
-- próxima sessão.
+- próxima sessão;
+- ações rápidas.
 
 As tags continuam existindo nos dados e podem ser usadas na busca, mas não aparecem mais no card para manter a interface mais limpa.
 
@@ -450,6 +456,33 @@ Melhorias aplicadas:
 
 ---
 
+## Responsividade e visual da lista de pacientes
+
+A página de pacientes também passou por revisão visual e responsiva.
+
+Componentes envolvidos:
+
+```txt
+PatientsPage
+PatientCard
+PatientsFilters
+```
+
+Melhorias aplicadas:
+
+- topo alinhado ao padrão visual da Home;
+- busca e filtro mais compactos;
+- card inteiro clicável;
+- ações internas preservadas;
+- cards mais harmônicos com o restante do sistema;
+- resumo da timeline mais discreto;
+- datas de última e próxima sessão em blocos menores;
+- estado vazio melhorado;
+- layout seguro em mobile;
+- lista mais limpa para uso como tela principal de prontuários.
+
+---
+
 ## Dados demonstrativos
 
 O projeto possui um arquivo central de seeds:
@@ -543,8 +576,11 @@ HomePage.jsx
 PatientsPage.jsx
 → controla listagem, busca, filtros e modais de pacientes
 
+PatientsFilters.jsx
+→ renderiza busca, filtro por status e limpeza de filtros
+
 PatientCard.jsx
-→ renderiza a linha responsiva do paciente
+→ renderiza o card responsivo do paciente
 
 AddPatientModal.jsx
 → cria e edita pacientes, incluindo relacionamentos do paciente
@@ -663,6 +699,9 @@ O projeto já possui:
 - navegação com Home e Pacientes;
 - Home com visão geral do profissional;
 - Home visualmente refinada;
+- página de pacientes refinada;
+- filtros de pacientes;
+- cards de paciente responsivos;
 - bloco Para acompanhar;
 - bloco Atenção clínica;
 - próximas sessões;
@@ -710,12 +749,12 @@ Essa limpeza reduz duplicação visual e mantém a estrutura do projeto mais sim
 
 ### Curto prazo
 
-- Fazer rodada de teste geral do MVP.
-- Revisar consistência visual da página de pacientes após as mudanças da Home e timeline.
+- Fazer última rodada de teste visual do MVP.
+- Revisar textos e microcopy do sistema.
 - Melhorar fluxo de criação de relacionamentos dentro do paciente.
 - Melhorar edição do paciente dentro do prontuário.
 - Melhorar estados vazios dos modos Emoções, Relações e Espelho.
-- Revisar textos e microcopy do sistema.
+- Preparar roteiro de apresentação do projeto para portfólio.
 
 ### Médio prazo
 
