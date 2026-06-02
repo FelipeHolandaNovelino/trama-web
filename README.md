@@ -416,6 +416,58 @@ O projeto também inclui modais responsivos, CRUD local de pacientes, criação 
 
 ---
 
+## Capturas do projeto
+
+### Home
+
+![Home do Trama](docs/images/01-home-trama.png)
+
+### Página de pacientes
+
+![Página de pacientes](docs/images/02-pacientes-trama.png)
+
+### Cadastro de paciente e relacionamentos
+
+![Cadastro de paciente com relacionamentos](docs/images/03-cadastro-paciente-relacionamentos.png)
+
+### Prontuário do paciente
+
+![Prontuário do paciente](docs/images/04-prontuario-paciente.png)
+
+### Timeline em modo Sessões
+
+![Timeline em modo Sessões](docs/images/05-timeline-sessoes.png)
+
+### Modal de sessão com blocos clínicos
+
+![Modal de sessão com blocos clínicos](docs/images/06-modal-sessao-blocos.png)
+
+### Criação de sessão e bloco clínico
+
+![Criação de sessão e bloco clínico](docs/images/07-criar-sessao-bloco-clinico.png)
+
+### Timeline em modo Emoções
+
+![Timeline em modo Emoções](docs/images/08-timeline-emocoes.png)
+
+### Timeline em modo Relações
+
+![Timeline em modo Relações](docs/images/09-timeline-relacoes.png)
+
+### Espelho do paciente
+
+![Espelho do paciente](docs/images/10-espelho-paciente.png)
+
+### Modal de bloco clínico
+
+![Modal de bloco clínico](docs/images/11-modal-bloco-clinico.png)
+
+### Responsividade mobile
+
+![Responsividade mobile](docs/images/12-responsividade-mobile.png)
+
+---
+
 ## Responsividade
 
 A responsividade principal do prontuário foi revisada nos componentes mais importantes da timeline.
