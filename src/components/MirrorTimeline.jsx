@@ -1,5 +1,39 @@
 import { useMemo, useState } from "react"
 
+const colorByType = {
+  "Marco positivo": {
+    card: "border-emerald-200 bg-emerald-50/70",
+    pill: "bg-emerald-100 text-emerald-800",
+    accent: "bg-emerald-500",
+  },
+  "Evento traumático": {
+    card: "border-rose-200 bg-rose-50/70",
+    pill: "bg-rose-100 text-rose-800",
+    accent: "bg-rose-500",
+  },
+  Insight: {
+    card: "border-amber-200 bg-amber-50/70",
+    pill: "bg-amber-100 text-amber-800",
+    accent: "bg-amber-500",
+  },
+  Evento: {
+    card: "border-violet-200 bg-violet-50/70",
+    pill: "bg-violet-100 text-violet-800",
+    accent: "bg-violet-500",
+  },
+  "Observação clínica": {
+    card: "border-sky-200 bg-sky-50/70",
+    pill: "bg-sky-100 text-sky-800",
+    accent: "bg-sky-500",
+  },
+}
+
+const fallbackTypeStyle = {
+  card: "border-slate-200 bg-white",
+  pill: "bg-slate-100 text-slate-700",
+  accent: "bg-slate-400",
+}
+
 function CalendarIcon({ className = "h-4 w-4" }) {
   return (
     <svg
@@ -225,7 +259,7 @@ function MirrorFilterButton({ isActive, children, onClick }) {
       className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
         isActive
           ? "bg-violet-800 text-white shadow-sm"
-          : "border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:text-violet-800"
+          : "border border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
       }`}
     >
       {children}
@@ -242,7 +276,7 @@ function MirrorYearSelect({ years, selectedYear, onSelectYear }) {
     <select
       value={selectedYear}
       onChange={(event) => onSelectYear(event.target.value)}
-      className="h-[34px] w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none transition hover:bg-violet-50 hover:text-violet-800 focus:border-violet-300 focus:ring-4 focus:ring-violet-100 sm:w-40"
+      className="h-[34px] w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800 focus:border-violet-300 focus:ring-4 focus:ring-violet-100 sm:w-40"
     >
       <option value="">Todos os anos</option>
 
@@ -260,6 +294,7 @@ function MirrorEventCard({ block, onOpenBlock }) {
   const hasConnections = connectionsCount > 0
   const intensity = Number(block.intensity || 0)
   const isHighIntensity = intensity >= 8
+  const typeStyle = colorByType[block.type] || fallbackTypeStyle
 
   function handleOpenBlock() {
     onOpenBlock(block)
@@ -277,95 +312,105 @@ function MirrorEventCard({ block, onOpenBlock }) {
       tabIndex={0}
       onClick={handleOpenBlock}
       onKeyDown={handleKeyboardOpen}
-      className="group cursor-pointer rounded-3xl border border-slate-200 bg-white p-4 outline-none transition hover:border-violet-200 hover:bg-violet-50/20 hover:shadow-sm focus-visible:ring-4 focus-visible:ring-violet-100"
+      className={`group relative cursor-pointer overflow-hidden rounded-3xl border p-4 outline-none transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-sm focus-visible:ring-4 focus-visible:ring-violet-100 ${typeStyle.card}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
-              <CalendarIcon className="h-3.5 w-3.5" />
-              {formatDate(block.eventDate || block.date)}
-            </span>
+      <span
+        className={`absolute left-0 top-0 h-full w-1.5 ${typeStyle.accent}`}
+        aria-hidden="true"
+      />
 
-            {block.type && (
-              <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-                {block.type}
+      <div className="pl-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {formatDate(block.eventDate || block.date)}
               </span>
-            )}
 
-            {hasConnections && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                <ConnectionIcon className="h-3.5 w-3.5" />
-                {connectionsCount} conexão{connectionsCount !== 1 ? "ões" : ""}
-              </span>
-            )}
+              {block.type && (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${typeStyle.pill}`}
+                >
+                  {block.type}
+                </span>
+              )}
+
+              {hasConnections && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm">
+                  <ConnectionIcon className="h-3.5 w-3.5" />
+                  {connectionsCount} conexão
+                  {connectionsCount !== 1 ? "ões" : ""}
+                </span>
+              )}
+            </div>
+
+            <h4 className="mt-3 line-clamp-1 text-base font-black text-slate-950">
+              {block.title || "Acontecimento sem título"}
+            </h4>
           </div>
 
-          <h4 className="mt-3 line-clamp-1 text-base font-black text-slate-950">
-            {block.title || "Acontecimento sem título"}
-          </h4>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-black shadow-sm ${
+              isHighIntensity
+                ? "bg-violet-800 text-white"
+                : "bg-white/80 text-slate-700"
+            }`}
+          >
+            {intensity || "—"}/10
+          </span>
         </div>
 
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-black ${
-            isHighIntensity
-              ? "bg-violet-800 text-white"
-              : "bg-slate-100 text-slate-700"
-          }`}
-        >
-          {intensity || "—"}/10
-        </span>
-      </div>
+        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-slate-600">
+          {block.text || "Sem narrativa registrada."}
+        </p>
 
-      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-slate-600">
-        {block.text || "Sem narrativa registrada."}
-      </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div>
+            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+              <HeartIcon className="h-3.5 w-3.5" />
+              Emoções
+            </p>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div>
-          <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-            <HeartIcon className="h-3.5 w-3.5" />
-            Emoções
-          </p>
-
-          <div className="flex flex-wrap gap-1.5">
-            {(block.emotions || []).length > 0 ? (
-              (block.emotions || []).slice(0, 4).map((emotion) => (
-                <span
-                  key={emotion}
-                  className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700"
-                >
-                  {emotion}
+            <div className="flex flex-wrap gap-1.5">
+              {(block.emotions || []).length > 0 ? (
+                (block.emotions || []).slice(0, 4).map((emotion) => (
+                  <span
+                    key={emotion}
+                    className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-violet-800 shadow-sm"
+                  >
+                    {emotion}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-slate-400">
+                  Nenhuma emoção registrada
                 </span>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400">
-                Nenhuma emoção registrada
-              </span>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-            Relações
-          </p>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+              Relações
+            </p>
 
-          <div className="flex flex-wrap gap-1.5">
-            {(block.people || []).length > 0 ? (
-              (block.people || []).slice(0, 4).map((person) => (
-                <span
-                  key={person}
-                  className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
-                >
-                  {person}
+            <div className="flex flex-wrap gap-1.5">
+              {(block.people || []).length > 0 ? (
+                (block.people || []).slice(0, 4).map((person) => (
+                  <span
+                    key={person}
+                    className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 shadow-sm"
+                  >
+                    {person}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-slate-400">
+                  Nenhuma relação registrada
                 </span>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400">
-                Nenhuma relação registrada
-              </span>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -376,9 +421,8 @@ function MirrorEventCard({ block, onOpenBlock }) {
 /**
  * Espelho do paciente.
  *
- * Diferente da visão de sessões, o Espelho organiza acontecimentos pela data
- * real em que ocorreram na vida do paciente. Isso ajuda a visualizar a linha
- * da vida emocional, conexões e padrões que atravessam diferentes sessões.
+ * Organiza acontecimentos pela data real em que ocorreram na vida do paciente,
+ * ajudando a visualizar conexões e padrões que atravessam diferentes sessões.
  */
 export function MirrorTimeline({ blocks = [], onOpenBlock }) {
   const [activeFilter, setActiveFilter] = useState("all")
@@ -456,7 +500,7 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
 
   return (
     <section className="grid gap-4">
-      <header className="rounded-3xl border border-violet-100 bg-violet-50/40 px-5 py-4">
+      <header className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -464,17 +508,12 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
                 Espelho do paciente
               </p>
 
-              <span className="hidden text-violet-300 sm:inline">·</span>
+              <span className="hidden text-slate-300 sm:inline">·</span>
 
               <h3 className="text-base font-black tracking-tight text-slate-950">
                 Linha da vida emocional
               </h3>
             </div>
-
-            <p className="mt-1 line-clamp-1 max-w-4xl text-xs leading-relaxed text-slate-500">
-              Acontecimentos organizados pela data real em que ocorreram na vida
-              do paciente.
-            </p>
 
             <div className="mt-2">
               <MirrorSummaryLine summary={summary} />
@@ -513,7 +552,7 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
       </header>
 
       {(selectedYear || activeFilter !== "all") && (
-        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <span className="text-xs font-semibold text-slate-500">
             Resultado atual:
           </span>
@@ -563,7 +602,7 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
           {years.map((year) => (
             <section key={year} className="grid gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-16 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+                <span className="flex h-9 w-16 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
                   {year}
                 </span>
 
