@@ -27,7 +27,7 @@ const timelineModes = [
   {
     id: "relational",
     label: "Relações",
-    description: "Blocos agrupados pelas pessoas importantes",
+    description: "Blocos filtrados e agrupados pelos relacionamentos do paciente",
   },
   {
     id: "mirror",
@@ -35,6 +35,126 @@ const timelineModes = [
     description: "Acontecimentos pela data real na vida do paciente",
   },
 ]
+
+/**
+ * Extrai o nome de um grupo de forma segura.
+ *
+ * Isso mantém compatibilidade caso groupBlocksByArrayField retorne grupos
+ * como objeto ou como array de objetos.
+ */
+function getGroupLabel(group) {
+  if (!group) return ""
+
+  if (typeof group === "string") return group
+
+  return group.label || group.name || group.title || group.key || group.group || ""
+}
+
+/**
+ * Retorna todas as opções disponíveis em um agrupamento.
+ *
+ * Funciona com dois formatos possíveis:
+ * - objeto: { Mãe: [...], Pai: [...] }
+ * - array: [{ label: "Mãe", blocks: [...] }]
+ */
+function getGroupOptions(groupedBlocks) {
+  if (!groupedBlocks) return []
+
+  if (Array.isArray(groupedBlocks)) {
+    return groupedBlocks
+      .map((group) => getGroupLabel(group))
+      .filter(Boolean)
+      .sort((firstOption, secondOption) =>
+        firstOption.localeCompare(secondOption, "pt-BR")
+      )
+  }
+
+  return Object.keys(groupedBlocks).sort((firstOption, secondOption) =>
+    firstOption.localeCompare(secondOption, "pt-BR")
+  )
+}
+
+/**
+ * Filtra um agrupamento mantendo o mesmo formato recebido.
+ *
+ * Isso evita alterar o contrato com GroupedBlocksView.
+ */
+function filterGroupedBlocksByLabel(groupedBlocks, selectedLabel) {
+  if (!selectedLabel) {
+    return groupedBlocks
+  }
+
+  if (Array.isArray(groupedBlocks)) {
+    return groupedBlocks.filter((group) => getGroupLabel(group) === selectedLabel)
+  }
+
+  if (groupedBlocks && groupedBlocks[selectedLabel]) {
+    return {
+      [selectedLabel]: groupedBlocks[selectedLabel],
+    }
+  }
+
+  return Array.isArray(groupedBlocks) ? [] : {}
+}
+
+/**
+ * Filtro compacto usado somente no modo Relações.
+ */
+function RelationshipFilter({
+  relationshipOptions,
+  selectedRelationship,
+  onSelectRelationship,
+}) {
+  if (relationshipOptions.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-sm font-black text-slate-900">
+            Filtrar por relacionamento
+          </p>
+
+          <p className="mt-0.5 text-xs text-slate-500">
+            Visualize apenas os blocos associados a uma relação específica.
+          </p>
+        </div>
+
+        <select
+          value={selectedRelationship}
+          onChange={(event) => onSelectRelationship(event.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100 lg:w-72"
+        >
+          <option value="">Todos os relacionamentos</option>
+
+          {relationshipOptions.map((relationship) => (
+            <option key={relationship} value={relationship}>
+              {relationship}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedRelationship && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
+            Exibindo: {selectedRelationship}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => onSelectRelationship("")}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+          >
+            Limpar filtro
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
 
 /**
  * Controla as quatro visualizações principais da timeline clínica.
@@ -62,6 +182,7 @@ export function Timeline({
   const [selectedMode, setSelectedMode] = useState("chronological")
   const [selectedYear, setSelectedYear] = useState(years[0] || "")
   const [selectedMonth, setSelectedMonth] = useState("JAN")
+  const [selectedRelationship, setSelectedRelationship] = useState("")
   const [isYearMenuOpen, setIsYearMenuOpen] = useState(false)
 
   const currentMode = timelineModes.find((mode) => mode.id === selectedMode)
@@ -91,6 +212,16 @@ export function Timeline({
   }, [selectedYear, timelineData, years])
 
   /**
+   * Limpa o filtro de relacionamento ao sair do modo Relações.
+   * Isso evita que o usuário volte ao modo com um filtro antigo sem perceber.
+   */
+  useEffect(() => {
+    if (selectedMode !== "relational") {
+      setSelectedRelationship("")
+    }
+  }, [selectedMode])
+
+  /**
    * Lista única de blocos usada pelas visões clínicas.
    */
   const allBlocks = useMemo(() => {
@@ -113,6 +244,22 @@ export function Timeline({
   const relationalGroups = useMemo(() => {
     return groupBlocksByArrayField(allBlocks, "people")
   }, [allBlocks])
+
+  /**
+   * Opções do filtro de relacionamento.
+   *
+   * Elas vêm dos blocos já registrados na timeline, ou seja:
+   * primeiro o relacionamento é cadastrado no paciente,
+   * depois pode ser usado em blocos,
+   * e então passa a aparecer aqui como filtro.
+   */
+  const relationshipOptions = useMemo(() => {
+    return getGroupOptions(relationalGroups)
+  }, [relationalGroups])
+
+  const filteredRelationalGroups = useMemo(() => {
+    return filterGroupedBlocksByLabel(relationalGroups, selectedRelationship)
+  }, [relationalGroups, selectedRelationship])
 
   function handleSelectYear(year) {
     setSelectedYear(year)
@@ -236,14 +383,30 @@ export function Timeline({
             )}
 
             {selectedMode === "relational" && (
-              <GroupedBlocksView
-                groupedBlocks={relationalGroups}
-                emptyTitle="Nenhuma relação registrada"
-                emptyDescription="As pessoas importantes aparecerão aqui quando houver blocos na timeline deste paciente."
-                onOpenConnectedBlock={handleOpenConnectedBlock}
-                onDeleteBlock={onDeleteBlock}
-                onEditBlock={onEditBlock}
-              />
+              <>
+                <RelationshipFilter
+                  relationshipOptions={relationshipOptions}
+                  selectedRelationship={selectedRelationship}
+                  onSelectRelationship={setSelectedRelationship}
+                />
+
+                <GroupedBlocksView
+                  groupedBlocks={filteredRelationalGroups}
+                  emptyTitle={
+                    selectedRelationship
+                      ? `Nenhum bloco relacionado a ${selectedRelationship}`
+                      : "Nenhuma relação registrada"
+                  }
+                  emptyDescription={
+                    selectedRelationship
+                      ? "Este relacionamento ainda não possui blocos registrados na timeline."
+                      : "As pessoas importantes aparecerão aqui quando houver blocos relacionados na timeline deste paciente."
+                  }
+                  onOpenConnectedBlock={handleOpenConnectedBlock}
+                  onDeleteBlock={onDeleteBlock}
+                  onEditBlock={onEditBlock}
+                />
+              </>
             )}
 
             {selectedMode === "mirror" && (
