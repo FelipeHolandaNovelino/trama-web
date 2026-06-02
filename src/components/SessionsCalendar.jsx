@@ -28,6 +28,10 @@ const dotColorByType = {
   "Observação clínica": "bg-blue-400",
 }
 
+/**
+ * Miniatura compacta de bloco dentro da linha de sessão.
+ * Mantém acesso rápido ao bloco sem deixar a lista alta demais.
+ */
 function MiniBlockCard({ block, onOpenBlock }) {
   return (
     <button
@@ -36,27 +40,27 @@ function MiniBlockCard({ block, onOpenBlock }) {
         event.stopPropagation()
         onOpenBlock(block)
       }}
-      className={`min-w-[128px] rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm sm:min-w-[132px] ${
+      className={`min-w-[112px] rounded-xl border px-3 py-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
         colorByType[block.type] || "border-slate-200 bg-slate-50 text-slate-800"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold">{block.type}</p>
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em]">
+          {block.type}
+        </span>
 
-        <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] text-slate-700">
+        <span className="shrink-0 text-[11px] font-black">
           {block.intensity}/10
         </span>
       </div>
 
-      <p className="mt-2 line-clamp-3 text-xs font-semibold text-slate-900">
-        {block.title}
-      </p>
+      <p className="mt-1 line-clamp-1 text-xs font-semibold">{block.title}</p>
 
-      <div className="mt-2 flex flex-wrap gap-1">
+      <div className="mt-1.5 flex flex-wrap gap-1">
         {(block.emotions || []).slice(0, 2).map((emotion) => (
           <span
             key={emotion}
-            className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] text-slate-700"
+            className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold"
           >
             {emotion}
           </span>
@@ -66,6 +70,10 @@ function MiniBlockCard({ block, onOpenBlock }) {
   )
 }
 
+/**
+ * Card compacto de mês.
+ * Mostra o essencial: mês, quantidade de sessões, blocos e tipos principais.
+ */
 function MonthCalendarCard({ month, sessions, isActive, onClick }) {
   const totalBlocks = getTotalBlocksFromSessions(sessions)
   const blockTypes = getMostCommonBlockTypesFromSessions(sessions)
@@ -74,72 +82,65 @@ function MonthCalendarCard({ month, sessions, isActive, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-[130px] rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:min-h-[150px] ${
+      className={`rounded-2xl border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${
         isActive
           ? "border-violet-300 bg-violet-50 shadow-sm"
-          : "border-slate-200 bg-white hover:bg-slate-50"
+          : "border-slate-200 bg-white hover:border-violet-200"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <p
-            className={`text-sm font-bold ${
+            className={`text-xs font-black ${
               isActive ? "text-violet-800" : "text-slate-800"
             }`}
           >
             {month}
           </p>
 
-          <p className="mt-1 text-xs text-slate-500">{monthNames[month]}</p>
+          <p className="mt-0.5 text-[11px] font-medium text-slate-400">
+            {monthNames[month]}
+          </p>
         </div>
 
         {sessions.length > 0 && (
-          <span
-            className={`rounded-full px-2 py-1 text-xs font-semibold ${
-              isActive
-                ? "bg-violet-700 text-white"
-                : "bg-violet-100 text-violet-800"
-            }`}
-          >
+          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-violet-700 shadow-sm">
             {sessions.length}
           </span>
         )}
       </div>
 
-      <div className="mt-5">
-        {sessions.length === 0 ? (
-          <p className="text-xs text-slate-400">Sem sessões</p>
-        ) : (
-          <>
-            <p className="text-xs font-medium text-slate-600">
-              {sessions.length} sessão{sessions.length > 1 ? "es" : ""}
-            </p>
+      {sessions.length === 0 ? (
+        <p className="mt-3 text-xs font-medium text-slate-400">Sem sessões</p>
+      ) : (
+        <div className="mt-3">
+          <p className="text-xs font-semibold text-slate-700">
+            {sessions.length} sessão{sessions.length > 1 ? "es" : ""}
+          </p>
 
-            <p className="mt-1 text-xs text-slate-500">
-              {totalBlocks} bloco{totalBlocks > 1 ? "s" : ""}
-            </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {totalBlocks} bloco{totalBlocks > 1 ? "s" : ""}
+          </p>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {blockTypes.map((type, index) => (
-                <span
-                  key={`${type}-${index}`}
-                  className={`h-2 w-2 rounded-full ${
-                    dotColorByType[type] || "bg-slate-300"
-                  }`}
-                  title={type}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+          <div className="mt-2 flex gap-1">
+            {blockTypes.slice(0, 4).map((type, index) => (
+              <span
+                key={`${type}-${index}`}
+                className={`h-1.5 w-1.5 rounded-full ${
+                  dotColorByType[type] || "bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </button>
   )
 }
 
 /**
- * Linha de sessão acessível e clicável.
- * Usa <article role="button"> para permitir botões internos sem HTML inválido.
+ * Linha compacta de sessão.
+ * A linha inteira abre a sessão; os blocos internos continuam clicáveis.
  */
 function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
   function handleOpenSession() {
@@ -159,46 +160,66 @@ function SessionRow({ session, sessionNumber, onOpenSession, onOpenBlock }) {
       tabIndex={0}
       onClick={handleOpenSession}
       onKeyDown={handleKeyDown}
-      className="block w-full cursor-pointer border-b border-slate-100 text-left transition last:border-b-0 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 lg:grid lg:grid-cols-[88px_170px_1fr_44px] lg:items-stretch"
+      className="grid cursor-pointer gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition hover:border-violet-200 hover:bg-violet-50/30 focus-visible:ring-4 focus-visible:ring-violet-100 lg:grid-cols-[72px_minmax(0,1fr)_auto] lg:items-center"
     >
-      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:px-4 lg:py-5">
-        <div>
-          <p className="text-2xl font-bold text-slate-900">
+      <div className="flex items-center gap-3 lg:block">
+        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-slate-50 text-slate-700">
+          <span className="text-lg font-black leading-none">
             {getDayFromDate(session.date)}
-          </p>
+          </span>
 
-          <p className="text-xs font-medium text-slate-500">
+          <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
             {getMonthNumberFromDate(session.date)}
-          </p>
+          </span>
         </div>
 
-        <p className="text-xs text-slate-400">16:00</p>
+        <span className="text-xs font-semibold text-slate-400 lg:mt-2 lg:block">
+          16:00
+        </span>
       </div>
 
-      <div className="border-b border-slate-100 px-4 py-4 lg:flex lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:px-5 lg:py-5">
-        <p className="text-sm font-semibold text-slate-900">
+      <div className="min-w-0">
+        <h4 className="truncate text-sm font-black text-slate-950">
           {session.title || `Sessão ${sessionNumber}`}
+        </h4>
+
+        <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-slate-500">
+          {session.summary || "Sessão sem resumo clínico."}
         </p>
 
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs font-semibold text-slate-400">
           {(session.blocks || []).length} bloco
           {(session.blocks || []).length > 1 ? "s" : ""} na sessão
         </p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-4 py-4 lg:px-5">
-        {(session.blocks || []).map((block) => (
-          <MiniBlockCard key={block.id} block={block} onOpenBlock={onOpenBlock} />
+      <div className="flex items-center gap-3 overflow-x-auto pb-1 lg:max-w-[420px]">
+        {(session.blocks || []).slice(0, 4).map((block) => (
+          <MiniBlockCard
+            key={block.id}
+            block={block}
+            onOpenBlock={onOpenBlock}
+          />
         ))}
-      </div>
 
-      <div className="hidden items-center justify-center text-xl text-slate-400 lg:flex">
-        ›
+        {(session.blocks || []).length > 4 && (
+          <span className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+            +{(session.blocks || []).length - 4}
+          </span>
+        )}
+
+        <span className="shrink-0 text-xl font-light text-slate-300">›</span>
       </div>
     </article>
   )
 }
 
+/**
+ * Calendário clínico compacto.
+ *
+ * Mantém a visão anual por meses, mas reduz altura, espaçamento e peso visual
+ * para deixar a timeline aparecer mais cedo na tela.
+ */
 export function SessionsCalendar({
   timelineData,
   selectedYear,
@@ -221,154 +242,143 @@ export function SessionsCalendar({
   const totalBlocksInAllYears = getAllBlocks(timelineData).length
   const totalSessionsInAllYears = getAllSessions(timelineData).length
 
+  const summaryItems = [
+    {
+      label: "Ano",
+      value: selectedYear || "—",
+    },
+    {
+      label: "Sessões no ano",
+      value: totalSessionsInYear,
+    },
+    {
+      label: "Sessões totais",
+      value: totalSessionsInAllYears,
+    },
+    {
+      label: "Blocos",
+      value: totalBlocksInAllYears,
+    },
+    {
+      label: "Mês aberto",
+      value: monthNames[selectedMonth] || "—",
+    },
+  ]
+
   return (
-    <div className="mt-6 space-y-5">
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section className="grid gap-4">
+      <header className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h4 className="text-sm font-black text-slate-950">
+            Calendário clínico
+          </h4>
+
+          <p className="mt-0.5 text-xs text-slate-500">
+            Selecione um mês para ver as sessões registradas.
+          </p>
+        </div>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={onToggleYearMenu}
+            className="inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 lg:w-auto"
+          >
+            {selectedYear || "Sem ano"}
+            <span className="text-slate-400">▾</span>
+          </button>
+
+          {isYearMenuOpen && (
+            <div className="absolute right-0 z-20 mt-2 min-w-36 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+              {years.map((year) => (
+                <button
+                  key={year}
+                  type="button"
+                  onClick={() => onSelectYear(year)}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition ${
+                    year === selectedYear
+                      ? "bg-violet-50 font-semibold text-violet-800"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12">
+        {monthLabels.map((month) => {
+          const monthSessions = getMonthSessions(yearGroup, month)
+
+          return (
+            <MonthCalendarCard
+              key={month}
+              month={month}
+              sessions={monthSessions}
+              isActive={selectedMonth === month}
+              onClick={() => onSelectMonth(month)}
+            />
+          )
+        })}
+      </section>
+
+      <section className="grid gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:grid-cols-5">
+        {summaryItems.map((item) => (
+          <div key={item.label}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              {item.label}
+            </p>
+
+            <p className="mt-1 text-sm font-black text-slate-800">
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
+        <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500">
-              Calendário clínico
-            </p>
+            <h4 className="text-sm font-black text-slate-950">
+              Sessões de {monthNames[selectedMonth]?.toLowerCase()}
+            </h4>
 
-            <h3 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">
-              Sessões por mês
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Clique em um mês para ver as sessões registradas.
-            </p>
-          </div>
-
-          <div className="relative">
-            <button
-              type="button"
-              onClick={onToggleYearMenu}
-              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-bold text-slate-900 shadow-sm hover:bg-slate-50 sm:w-auto"
-            >
-              {selectedYear || "Sem ano"}
-              <span className="text-sm text-slate-400">▾</span>
-            </button>
-
-            {isYearMenuOpen && (
-              <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:left-auto sm:w-44">
-                {years.map((year) => (
-                  <button
-                    type="button"
-                    key={year}
-                    onClick={() => onSelectYear(year)}
-                    className={`w-full px-4 py-3 text-left text-sm transition ${
-                      year === selectedYear
-                        ? "bg-violet-50 font-semibold text-violet-800"
-                        : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {monthLabels.map((month) => {
-            const monthSessions = getMonthSessions(yearGroup, month)
-
-            return (
-              <MonthCalendarCard
-                key={month}
-                month={month}
-                sessions={monthSessions}
-                isActive={selectedMonth === month}
-                onClick={() => onSelectMonth(month)}
-              />
-            )
-          })}
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Sessões no ano
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {totalSessionsInYear}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Sessões totais
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {totalSessionsInAllYears}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Blocos de eventos totais
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {totalBlocksInAllYears}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">Mês aberto</p>
-
-            <p className="mt-1 text-lg font-bold text-violet-800">
-              {monthNames[selectedMonth]}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-6">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 sm:text-lg">
-              Sessões de {monthNames[selectedMonth].toLowerCase()}
-            </h3>
-
-            <p className="text-sm text-slate-500">
-              {selectedYear} • {sessions.length} sessão
+            <p className="mt-0.5 text-xs text-slate-500">
+              {selectedYear || "—"} • {sessions.length} sessão
               {sessions.length !== 1 ? "es" : ""} encontrada
               {sessions.length !== 1 ? "s" : ""}
             </p>
           </div>
-        </div>
+        </header>
 
-        {sessions.length === 0 ? (
-          <div className="flex min-h-[240px] items-center justify-center p-8 text-center">
-            <div>
-              <p className="text-lg font-semibold text-slate-800">
+        <div className="mt-3 grid gap-3">
+          {sessions.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+              <p className="text-sm font-black text-slate-800">
                 Nenhuma sessão registrada neste mês
               </p>
 
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Quando houver sessões em {monthNames[selectedMonth]}, elas
                 aparecerão aqui.
               </p>
             </div>
-          </div>
-        ) : (
-          <div>
-            {sessions.map((session, index) => (
+          ) : (
+            sessions.map((session, index) => (
               <SessionRow
                 key={session.id}
                 session={session}
-                sessionNumber={sessions.length - index}
+                sessionNumber={index + 1}
                 onOpenSession={onOpenSession}
                 onOpenBlock={onOpenBlock}
               />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+            ))
+          )}
+        </div>
+      </section>
+    </section>
   )
 }
