@@ -98,50 +98,43 @@ function getMirrorSummary(blocks) {
 }
 
 function MirrorSummaryLine({ summary }) {
+  const summaryItems = [
+    {
+      label: "acontecimentos",
+      value: summary.eventsCount,
+    },
+    {
+      label: "conexões",
+      value: summary.connectionsCount,
+    },
+    {
+      label: "emoções",
+      value: summary.emotionsCount,
+    },
+    {
+      label: "relações",
+      value: summary.relationshipsCount,
+    },
+    {
+      label: "alta intensidade",
+      value: summary.highIntensityCount,
+    },
+  ]
+
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-500">
-      <span>
-        <strong className="font-black text-slate-800">
-          {summary.eventsCount}
-        </strong>{" "}
-        acontecimentos
-      </span>
+    <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500 sm:gap-x-3">
+      {summaryItems.map((item, index) => (
+        <span key={item.label} className="inline-flex items-center gap-1.5">
+          {index > 0 && (
+            <span className="hidden text-slate-300 sm:inline">·</span>
+          )}
 
-      <span className="text-slate-300">·</span>
-
-      <span>
-        <strong className="font-black text-slate-800">
-          {summary.connectionsCount}
-        </strong>{" "}
-        conexões
-      </span>
-
-      <span className="text-slate-300">·</span>
-
-      <span>
-        <strong className="font-black text-slate-800">
-          {summary.emotionsCount}
-        </strong>{" "}
-        emoções
-      </span>
-
-      <span className="text-slate-300">·</span>
-
-      <span>
-        <strong className="font-black text-slate-800">
-          {summary.relationshipsCount}
-        </strong>{" "}
-        relações
-      </span>
-
-      <span className="text-slate-300">·</span>
-
-      <span>
-        <strong className="font-black text-slate-800">
-          {summary.highIntensityCount}
-        </strong>{" "}
-        alta intensidade
-      </span>
+          <span className="rounded-full bg-slate-50 px-2.5 py-1 sm:bg-transparent sm:px-0 sm:py-0">
+            <strong className="font-black text-slate-800">{item.value}</strong>{" "}
+            {item.label}
+          </span>
+        </span>
+      ))}
     </div>
   )
 }
@@ -151,7 +144,7 @@ function MirrorFilterButton({ isActive, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+      className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:py-1.5 ${
         isActive
           ? "bg-violet-800 text-white shadow-sm"
           : "border border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
@@ -171,7 +164,7 @@ function MirrorYearSelect({ years, selectedYear, onSelectYear }) {
     <select
       value={selectedYear}
       onChange={(event) => onSelectYear(event.target.value)}
-      className="h-[34px] w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800 focus:border-violet-300 focus:ring-4 focus:ring-violet-100 sm:w-40"
+      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800 focus:border-violet-300 focus:ring-4 focus:ring-violet-100 sm:h-[34px] sm:w-40"
     >
       <option value="">Todos os anos</option>
 
@@ -184,12 +177,136 @@ function MirrorYearSelect({ years, selectedYear, onSelectYear }) {
   )
 }
 
+function MirrorFilters({
+  activeFilter,
+  selectedYear,
+  availableYears,
+  onSelectFilter,
+  onSelectYear,
+}) {
+  return (
+    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[160px_repeat(3,minmax(0,1fr))] xl:w-auto xl:flex xl:shrink-0 xl:flex-wrap xl:justify-end">
+      <MirrorYearSelect
+        years={availableYears}
+        selectedYear={selectedYear}
+        onSelectYear={onSelectYear}
+      />
+
+      <MirrorFilterButton
+        isActive={activeFilter === "all"}
+        onClick={() => onSelectFilter("all")}
+      >
+        Todos
+      </MirrorFilterButton>
+
+      <MirrorFilterButton
+        isActive={activeFilter === "connected"}
+        onClick={() => onSelectFilter("connected")}
+      >
+        Conectados
+      </MirrorFilterButton>
+
+      <MirrorFilterButton
+        isActive={activeFilter === "highIntensity"}
+        onClick={() => onSelectFilter("highIntensity")}
+      >
+        Alta intensidade
+      </MirrorFilterButton>
+    </div>
+  )
+}
+
+function ActiveFiltersSummary({
+  selectedYear,
+  activeFilter,
+  filteredSummary,
+  onClearFilters,
+}) {
+  if (!selectedYear && activeFilter === "all") {
+    return null
+  }
+
+  const filterLabelByType = {
+    connected: "Conectados",
+    highIntensity: "Alta intensidade",
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-slate-500">
+          Resultado atual:
+        </span>
+
+        {selectedYear && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+            Ano: {selectedYear}
+          </span>
+        )}
+
+        {activeFilter !== "all" && (
+          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
+            {filterLabelByType[activeFilter]}
+          </span>
+        )}
+
+        <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
+          {filteredSummary.eventsCount} acontecimento
+          {filteredSummary.eventsCount !== 1 ? "s" : ""}
+        </span>
+
+        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+          {filteredSummary.connectionsCount} conexão
+          {filteredSummary.connectionsCount !== 1 ? "ões" : ""}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClearFilters}
+        className="w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 sm:ml-auto sm:w-auto sm:py-1"
+      >
+        Limpar filtros
+      </button>
+    </section>
+  )
+}
+
+function YearSection({ year, blocks, onOpenBlock }) {
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-xs font-black text-white sm:h-9 sm:w-16 sm:text-sm">
+          {year}
+        </span>
+
+        <div className="h-px min-w-6 flex-1 bg-slate-200" />
+
+        <span className="shrink-0 text-[11px] font-semibold text-slate-400 sm:text-xs">
+          {blocks.length} acontecimento{blocks.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-2">
+        {blocks.map((block) => (
+          <ClinicalBlockCard
+            key={block.id}
+            block={block}
+            onOpenBlock={onOpenBlock}
+            showActions={false}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /**
  * Espelho do paciente.
  *
  * Organiza acontecimentos pela data real em que ocorreram na vida do paciente.
- * Os cards agora usam ClinicalBlockCard, garantindo o mesmo padrão visual
- * dos modos Sessões, Emoções e Relações.
+ * Usa ClinicalBlockCard para manter o mesmo padrão visual dos modos Sessões,
+ * Emoções e Relações.
  */
 export function MirrorTimeline({ blocks = [], onOpenBlock }) {
   const [activeFilter, setActiveFilter] = useState("all")
@@ -250,6 +367,11 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
     return Number(firstYear) - Number(secondYear)
   })
 
+  function handleClearFilters() {
+    setSelectedYear("")
+    setActiveFilter("all")
+  }
+
   if (blocks.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center">
@@ -267,8 +389,8 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
 
   return (
     <section className="grid gap-4">
-      <header className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <header className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
@@ -287,71 +409,22 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap xl:justify-end">
-            <MirrorYearSelect
-              years={availableYears}
-              selectedYear={selectedYear}
-              onSelectYear={setSelectedYear}
-            />
-
-            <MirrorFilterButton
-              isActive={activeFilter === "all"}
-              onClick={() => setActiveFilter("all")}
-            >
-              Todos
-            </MirrorFilterButton>
-
-            <MirrorFilterButton
-              isActive={activeFilter === "connected"}
-              onClick={() => setActiveFilter("connected")}
-            >
-              Conectados
-            </MirrorFilterButton>
-
-            <MirrorFilterButton
-              isActive={activeFilter === "highIntensity"}
-              onClick={() => setActiveFilter("highIntensity")}
-            >
-              Alta intensidade
-            </MirrorFilterButton>
-          </div>
+          <MirrorFilters
+            activeFilter={activeFilter}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onSelectFilter={setActiveFilter}
+            onSelectYear={setSelectedYear}
+          />
         </div>
       </header>
 
-      {(selectedYear || activeFilter !== "all") && (
-        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500">
-            Resultado atual:
-          </span>
-
-          {selectedYear && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-              Ano: {selectedYear}
-            </span>
-          )}
-
-          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
-            {filteredSummary.eventsCount} acontecimento
-            {filteredSummary.eventsCount !== 1 ? "s" : ""}
-          </span>
-
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-            {filteredSummary.connectionsCount} conexão
-            {filteredSummary.connectionsCount !== 1 ? "ões" : ""}
-          </span>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedYear("")
-              setActiveFilter("all")
-            }}
-            className="ml-auto rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
-          >
-            Limpar filtros
-          </button>
-        </section>
-      )}
+      <ActiveFiltersSummary
+        selectedYear={selectedYear}
+        activeFilter={activeFilter}
+        filteredSummary={filteredSummary}
+        onClearFilters={handleClearFilters}
+      />
 
       {filteredBlocks.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center">
@@ -367,31 +440,12 @@ export function MirrorTimeline({ blocks = [], onOpenBlock }) {
       ) : (
         <section className="grid gap-6">
           {years.map((year) => (
-            <section key={year} className="grid gap-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-16 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
-                  {year}
-                </span>
-
-                <div className="h-px flex-1 bg-slate-200" />
-
-                <span className="text-xs font-semibold text-slate-400">
-                  {groupedBlocks[year].length} acontecimento
-                  {groupedBlocks[year].length !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              <div className="grid gap-3 xl:grid-cols-2">
-                {groupedBlocks[year].map((block) => (
-                  <ClinicalBlockCard
-                    key={block.id}
-                    block={block}
-                    onOpenBlock={onOpenBlock}
-                    showActions={false}
-                  />
-                ))}
-              </div>
-            </section>
+            <YearSection
+              key={year}
+              year={year}
+              blocks={groupedBlocks[year]}
+              onOpenBlock={onOpenBlock}
+            />
           ))}
         </section>
       )}
