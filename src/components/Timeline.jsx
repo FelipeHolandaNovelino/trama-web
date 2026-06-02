@@ -22,7 +22,7 @@ const timelineModes = [
   {
     id: "emotional",
     label: "Emoções",
-    description: "Blocos agrupados pelas emoções recorrentes",
+    description: "Blocos filtrados e agrupados pelas emoções recorrentes",
   },
   {
     id: "relational",
@@ -39,8 +39,8 @@ const timelineModes = [
 /**
  * Extrai o nome de um grupo de forma segura.
  *
- * Isso mantém compatibilidade caso groupBlocksByArrayField retorne grupos
- * como objeto ou como array de objetos.
+ * Mantém compatibilidade caso groupBlocksByArrayField retorne grupos
+ * em formatos diferentes.
  */
 function getGroupLabel(group) {
   if (!group) return ""
@@ -51,11 +51,11 @@ function getGroupLabel(group) {
 }
 
 /**
- * Retorna todas as opções disponíveis em um agrupamento.
+ * Retorna as opções disponíveis dentro de um agrupamento.
  *
  * Funciona com dois formatos possíveis:
- * - objeto: { Mãe: [...], Pai: [...] }
- * - array: [{ label: "Mãe", blocks: [...] }]
+ * - objeto: { Ansiedade: [...], Culpa: [...] }
+ * - array: [{ label: "Ansiedade", blocks: [...] }]
  */
 function getGroupOptions(groupedBlocks) {
   if (!groupedBlocks) return []
@@ -98,14 +98,20 @@ function filterGroupedBlocksByLabel(groupedBlocks, selectedLabel) {
 }
 
 /**
- * Filtro compacto usado somente no modo Relações.
+ * Filtro compacto para visões agrupadas da timeline.
+ *
+ * Usado nos modos Emoções e Relações.
  */
-function RelationshipFilter({
-  relationshipOptions,
-  selectedRelationship,
-  onSelectRelationship,
+function TimelineGroupFilter({
+  title,
+  description,
+  allLabel,
+  options,
+  selectedOption,
+  selectedLabelPrefix,
+  onSelectOption,
 }) {
-  if (relationshipOptions.length === 0) {
+  if (options.length === 0) {
     return null
   }
 
@@ -113,39 +119,35 @@ function RelationshipFilter({
     <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm font-black text-slate-900">
-            Filtrar por relacionamento
-          </p>
+          <p className="text-sm font-black text-slate-900">{title}</p>
 
-          <p className="mt-0.5 text-xs text-slate-500">
-            Visualize apenas os blocos associados a uma relação específica.
-          </p>
+          <p className="mt-0.5 text-xs text-slate-500">{description}</p>
         </div>
 
         <select
-          value={selectedRelationship}
-          onChange={(event) => onSelectRelationship(event.target.value)}
+          value={selectedOption}
+          onChange={(event) => onSelectOption(event.target.value)}
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100 lg:w-72"
         >
-          <option value="">Todos os relacionamentos</option>
+          <option value="">{allLabel}</option>
 
-          {relationshipOptions.map((relationship) => (
-            <option key={relationship} value={relationship}>
-              {relationship}
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
             </option>
           ))}
         </select>
       </div>
 
-      {selectedRelationship && (
+      {selectedOption && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
-            Exibindo: {selectedRelationship}
+            {selectedLabelPrefix}: {selectedOption}
           </span>
 
           <button
             type="button"
-            onClick={() => onSelectRelationship("")}
+            onClick={() => onSelectOption("")}
             className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
           >
             Limpar filtro
@@ -182,6 +184,7 @@ export function Timeline({
   const [selectedMode, setSelectedMode] = useState("chronological")
   const [selectedYear, setSelectedYear] = useState(years[0] || "")
   const [selectedMonth, setSelectedMonth] = useState("JAN")
+  const [selectedEmotion, setSelectedEmotion] = useState("")
   const [selectedRelationship, setSelectedRelationship] = useState("")
   const [isYearMenuOpen, setIsYearMenuOpen] = useState(false)
 
@@ -212,10 +215,16 @@ export function Timeline({
   }, [selectedYear, timelineData, years])
 
   /**
-   * Limpa o filtro de relacionamento ao sair do modo Relações.
-   * Isso evita que o usuário volte ao modo com um filtro antigo sem perceber.
+   * Limpa filtros específicos ao trocar de modo.
+   *
+   * Isso evita que o usuário volte a uma visualização com filtro antigo
+   * sem perceber.
    */
   useEffect(() => {
+    if (selectedMode !== "emotional") {
+      setSelectedEmotion("")
+    }
+
     if (selectedMode !== "relational") {
       setSelectedRelationship("")
     }
@@ -246,16 +255,26 @@ export function Timeline({
   }, [allBlocks])
 
   /**
+   * Opções do filtro de emoções.
+   *
+   * Elas vêm das emoções já usadas nos blocos da timeline.
+   */
+  const emotionOptions = useMemo(() => {
+    return getGroupOptions(emotionalGroups)
+  }, [emotionalGroups])
+
+  /**
    * Opções do filtro de relacionamento.
    *
-   * Elas vêm dos blocos já registrados na timeline, ou seja:
-   * primeiro o relacionamento é cadastrado no paciente,
-   * depois pode ser usado em blocos,
-   * e então passa a aparecer aqui como filtro.
+   * Elas vêm dos relacionamentos já usados em blocos da timeline.
    */
   const relationshipOptions = useMemo(() => {
     return getGroupOptions(relationalGroups)
   }, [relationalGroups])
+
+  const filteredEmotionalGroups = useMemo(() => {
+    return filterGroupedBlocksByLabel(emotionalGroups, selectedEmotion)
+  }, [emotionalGroups, selectedEmotion])
 
   const filteredRelationalGroups = useMemo(() => {
     return filterGroupedBlocksByLabel(relationalGroups, selectedRelationship)
@@ -372,22 +391,46 @@ export function Timeline({
             )}
 
             {selectedMode === "emotional" && (
-              <GroupedBlocksView
-                groupedBlocks={emotionalGroups}
-                emptyTitle="Nenhuma emoção registrada"
-                emptyDescription="As emoções aparecerão aqui quando houver blocos na timeline deste paciente."
-                onOpenConnectedBlock={handleOpenConnectedBlock}
-                onDeleteBlock={onDeleteBlock}
-                onEditBlock={onEditBlock}
-              />
+              <>
+                <TimelineGroupFilter
+                  title="Filtrar por emoção"
+                  description="Visualize apenas os blocos associados a uma emoção específica."
+                  allLabel="Todas as emoções"
+                  options={emotionOptions}
+                  selectedOption={selectedEmotion}
+                  selectedLabelPrefix="Exibindo"
+                  onSelectOption={setSelectedEmotion}
+                />
+
+                <GroupedBlocksView
+                  groupedBlocks={filteredEmotionalGroups}
+                  emptyTitle={
+                    selectedEmotion
+                      ? `Nenhum bloco relacionado a ${selectedEmotion}`
+                      : "Nenhuma emoção registrada"
+                  }
+                  emptyDescription={
+                    selectedEmotion
+                      ? "Esta emoção ainda não possui blocos registrados na timeline."
+                      : "As emoções aparecerão aqui quando houver blocos na timeline deste paciente."
+                  }
+                  onOpenConnectedBlock={handleOpenConnectedBlock}
+                  onDeleteBlock={onDeleteBlock}
+                  onEditBlock={onEditBlock}
+                />
+              </>
             )}
 
             {selectedMode === "relational" && (
               <>
-                <RelationshipFilter
-                  relationshipOptions={relationshipOptions}
-                  selectedRelationship={selectedRelationship}
-                  onSelectRelationship={setSelectedRelationship}
+                <TimelineGroupFilter
+                  title="Filtrar por relacionamento"
+                  description="Visualize apenas os blocos associados a uma relação específica."
+                  allLabel="Todos os relacionamentos"
+                  options={relationshipOptions}
+                  selectedOption={selectedRelationship}
+                  selectedLabelPrefix="Exibindo"
+                  onSelectOption={setSelectedRelationship}
                 />
 
                 <GroupedBlocksView
