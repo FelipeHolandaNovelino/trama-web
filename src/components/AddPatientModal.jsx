@@ -51,6 +51,23 @@ function formatDateToBrazilian(dateValue) {
 }
 
 /**
+ * Formata relacionamentos com primeira letra maiúscula.
+ *
+ * Isso mantém opções como "mãe", "PAI" ou "chefe antigo" em um padrão visual
+ * mais limpo para aparecer depois no campo Relações da timeline.
+ */
+function formatRelationshipName(value) {
+  const normalizedValue = String(value).trim().toLocaleLowerCase("pt-BR")
+
+  if (!normalizedValue) return ""
+
+  return (
+    normalizedValue.charAt(0).toLocaleUpperCase("pt-BR") +
+    normalizedValue.slice(1)
+  )
+}
+
+/**
  * Normaliza listas vindas de formatos antigos e novos.
  *
  * Aceita array ou string separada por vírgula para manter compatibilidade
@@ -71,6 +88,18 @@ function normalizeList(value) {
   return []
 }
 
+/**
+ * Normaliza especificamente os relacionamentos do paciente.
+ *
+ * Além de aceitar formatos antigos, também aplica a padronização visual
+ * com primeira letra maiúscula.
+ */
+function normalizeRelationships(value) {
+  return normalizeList(value)
+    .map((relationship) => formatRelationshipName(relationship))
+    .filter(Boolean)
+}
+
 function createInitialFormDataFromPatient(patient) {
   if (!patient) {
     return initialFormData
@@ -89,7 +118,7 @@ function createInitialFormDataFromPatient(patient) {
     mainComplaint: patient.mainComplaint || "",
     description: patient.description || "",
     tags: normalizeList(patient.tags).join(", "),
-    relationships: normalizeList(patient.relationships),
+    relationships: normalizeRelationships(patient.relationships),
   }
 }
 
@@ -142,14 +171,15 @@ export function AddPatientModal({
   }
 
   function handleAddRelationship() {
-    const relationship = relationshipDraft.trim()
+    const relationship = formatRelationshipName(relationshipDraft)
 
     if (!relationship) return
 
     setFormData((currentData) => {
       const alreadyExists = currentData.relationships.some(
         (currentRelationship) =>
-          currentRelationship.toLowerCase() === relationship.toLowerCase()
+          currentRelationship.toLocaleLowerCase("pt-BR") ===
+          relationship.toLocaleLowerCase("pt-BR")
       )
 
       if (alreadyExists) {
@@ -206,7 +236,7 @@ export function AddPatientModal({
       mainComplaint: formData.mainComplaint,
       description: formData.description,
       tags: normalizeList(formData.tags),
-      relationships: formData.relationships,
+      relationships: normalizeRelationships(formData.relationships),
       mirror: initialPatient?.mirror || {
         centralWound: "",
         mainFear: "",
