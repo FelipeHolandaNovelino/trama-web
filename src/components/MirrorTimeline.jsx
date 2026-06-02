@@ -1,329 +1,458 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
-import {
-  getBlocksById,
-  getConnectionsCount,
-  getDayFromDate,
-  getMirrorConnectedBlocks,
-  getMirrorMainBlocks,
-  getMonthFromEventDate,
-  getUniquePeopleCount,
-  getYearFromEventDate,
-  sortBlocksByEventDate,
-} from "../utils/timelineUtils"
-
-const mirrorColorByType = {
-  "Marco positivo": "border-emerald-200 bg-emerald-50",
-  "Evento traumático": "border-rose-200 bg-rose-50",
-  Insight: "border-amber-200 bg-amber-50",
-  Evento: "border-violet-200 bg-violet-50",
-  "Observação clínica": "border-blue-200 bg-blue-50",
+function CalendarIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h18" />
+    </svg>
+  )
 }
 
-const mirrorConnectionColorByStrength = {
-  leve: "border-slate-200 bg-slate-50 text-slate-700",
-  moderada: "border-amber-200 bg-amber-50 text-amber-800",
-  forte: "border-emerald-200 bg-emerald-50 text-emerald-800",
+function ConnectionIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L11 4.93" />
+      <path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07L13 19.07" />
+    </svg>
+  )
 }
 
-function MirrorConnectedCard({ block, onOpenBlock }) {
+function HeartIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+    </svg>
+  )
+}
+
+/**
+ * Converte uma data da timeline em timestamp seguro para ordenação.
+ */
+function getDateTimestamp(dateValue) {
+  if (!dateValue) return 0
+
+  const timestamp = new Date(`${dateValue}T00:00:00`).getTime()
+
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+/**
+ * Extrai o ano da data do acontecimento.
+ */
+function getYearFromDate(dateValue) {
+  if (!dateValue) return "Sem data"
+
+  if (dateValue.includes("-")) {
+    return dateValue.split("-")[0] || "Sem data"
+  }
+
+  if (dateValue.includes("/")) {
+    return dateValue.split("/")[2] || "Sem data"
+  }
+
+  return "Sem data"
+}
+
+/**
+ * Formata datas salvas como YYYY-MM-DD para DD/MM/YYYY.
+ */
+function formatDate(dateValue) {
+  if (!dateValue) return "Data não informada"
+
+  if (dateValue.includes("/")) {
+    return dateValue
+  }
+
+  const [year, month, day] = dateValue.split("-")
+
+  if (!year || !month || !day) {
+    return dateValue
+  }
+
+  return `${day}/${month}/${year}`
+}
+
+/**
+ * Remove repetições e valores vazios de uma lista.
+ */
+function getUniqueItems(items = []) {
+  return [...new Set(items.filter(Boolean))]
+}
+
+/**
+ * Agrupa acontecimentos por ano real do evento.
+ */
+function groupBlocksByYear(blocks) {
+  return blocks.reduce((groups, block) => {
+    const year = getYearFromDate(block.eventDate || block.date)
+
+    if (!groups[year]) {
+      groups[year] = []
+    }
+
+    groups[year].push(block)
+
+    return groups
+  }, {})
+}
+
+/**
+ * Calcula dados resumidos do espelho.
+ */
+function getMirrorSummary(blocks) {
+  const connectionsCount = blocks.reduce((total, block) => {
+    return total + (block.connections?.length || 0)
+  }, 0)
+
+  const emotions = getUniqueItems(blocks.flatMap((block) => block.emotions || []))
+  const relationships = getUniqueItems(
+    blocks.flatMap((block) => block.people || [])
+  )
+
+  const highIntensityCount = blocks.filter(
+    (block) => Number(block.intensity || 0) >= 8
+  ).length
+
+  return {
+    eventsCount: blocks.length,
+    connectionsCount,
+    emotionsCount: emotions.length,
+    relationshipsCount: relationships.length,
+    highIntensityCount,
+  }
+}
+
+function SummaryItem({ label, value }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+
+      <strong className="mt-1 block text-lg font-black text-slate-950">
+        {value}
+      </strong>
+    </article>
+  )
+}
+
+function MirrorFilterButton({ isActive, children, onClick }) {
   return (
     <button
       type="button"
-      onClick={() => onOpenBlock(block)}
-      className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
-        mirrorConnectionColorByStrength[block.connectionStrength] ||
-        "border-slate-200 bg-slate-50 text-slate-700"
+      onClick={onClick}
+      className={`rounded-2xl px-4 py-2 text-xs font-semibold transition ${
+        isActive
+          ? "bg-violet-800 text-white shadow-sm"
+          : "border border-slate-200 bg-white text-slate-600 hover:bg-violet-50 hover:text-violet-800"
       }`}
     >
-      <p className="text-xs font-semibold text-slate-500">
-        {block.eventDate || block.date}
-      </p>
-
-      <h5 className="mt-1 text-sm font-bold text-slate-900">{block.title}</h5>
-
-      {block.connectionReason && (
-        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">
-          {block.connectionReason}
-        </p>
-      )}
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {(block.emotions || []).slice(0, 2).map((emotion) => (
-          <span
-            key={emotion}
-            className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] text-slate-700"
-          >
-            {emotion}
-          </span>
-        ))}
-      </div>
+      {children}
     </button>
   )
 }
 
-function MirrorMainCard({ block, connectedBlocks, onOpenBlock }) {
-  const year = getYearFromEventDate(block.eventDate)
-  const month = getMonthFromEventDate(block.eventDate)
+function MirrorEventCard({ block, onOpenBlock }) {
+  const connectionsCount = block.connections?.length || 0
+  const hasConnections = connectionsCount > 0
+  const intensity = Number(block.intensity || 0)
+  const isHighIntensity = intensity >= 8
+
+  function handleOpenBlock() {
+    onOpenBlock(block)
+  }
+
+  function handleKeyboardOpen(event) {
+    if (event.key === "Enter") {
+      handleOpenBlock()
+    }
+  }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_380px] 2xl:grid-cols-[1fr_420px]">
-      <button
-        type="button"
-        onClick={() => onOpenBlock(block)}
-        className={`relative rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
-          mirrorColorByType[block.type] || "border-slate-200 bg-white"
-        }`}
-      >
-        <div className="absolute -left-[25px] top-7 h-4 w-4 rounded-full border-4 border-white bg-violet-700 shadow sm:-left-[29px]" />
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={handleOpenBlock}
+      onKeyDown={handleKeyboardOpen}
+      className="group cursor-pointer rounded-3xl border border-slate-200 bg-white p-4 outline-none transition hover:border-violet-200 hover:bg-violet-50/20 hover:shadow-sm focus-visible:ring-4 focus-visible:ring-violet-100"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {formatDate(block.eventDate || block.date)}
+            </span>
 
-        <div className="grid gap-4 md:grid-cols-[88px_1fr] xl:grid-cols-[90px_1fr_180px]">
-          <div className="border-b border-slate-200 pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
-            <p className="text-2xl font-bold text-slate-900">
-              {getDayFromDate(block.eventDate)}
-            </p>
+            {block.type && (
+              <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+                {block.type}
+              </span>
+            )}
 
-            <p className="text-xs font-semibold text-violet-700">{month}</p>
-
-            <p className="mt-1 text-xs text-slate-400">{year}</p>
+            {hasConnections && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                <ConnectionIcon className="h-3.5 w-3.5" />
+                {connectionsCount} conexão{connectionsCount !== 1 ? "ões" : ""}
+              </span>
+            )}
           </div>
 
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-500">{block.type}</p>
+          <h4 className="mt-3 line-clamp-1 text-base font-black text-slate-950">
+            {block.title || "Acontecimento sem título"}
+          </h4>
+        </div>
 
-            <h4 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
-              {block.title}
-            </h4>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-black ${
+            isHighIntensity
+              ? "bg-violet-800 text-white"
+              : "bg-slate-100 text-slate-700"
+          }`}
+        >
+          {intensity || "—"}/10
+        </span>
+      </div>
 
-            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 sm:line-clamp-2">
-              {block.text}
-            </p>
+      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-slate-600">
+        {block.text || "Sem narrativa registrada."}
+      </p>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(block.emotions || []).slice(0, 4).map((emotion) => (
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div>
+          <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+            <HeartIcon className="h-3.5 w-3.5" />
+            Emoções
+          </p>
+
+          <div className="flex flex-wrap gap-1.5">
+            {(block.emotions || []).length > 0 ? (
+              (block.emotions || []).slice(0, 4).map((emotion) => (
                 <span
                   key={emotion}
-                  className="rounded-full bg-white/80 px-2 py-1 text-xs text-slate-700"
+                  className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700"
                 >
                   {emotion}
                 </span>
-              ))}
-            </div>
+              ))
+            ) : (
+              <span className="text-xs text-slate-400">
+                Nenhuma emoção registrada
+              </span>
+            )}
           </div>
+        </div>
 
-          <div className="border-t border-slate-200 pt-3 md:col-span-2 xl:col-span-1 xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0">
-            <p className="text-xs font-semibold text-slate-500">
-              Pessoas envolvidas
-            </p>
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+            Relações
+          </p>
 
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {(block.people || []).slice(0, 3).map((person) => (
+          <div className="flex flex-wrap gap-1.5">
+            {(block.people || []).length > 0 ? (
+              (block.people || []).slice(0, 4).map((person) => (
                 <span
                   key={person}
-                  className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700"
+                  className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
                 >
                   {person}
                 </span>
-              ))}
-
-              {(block.people || []).length > 3 && (
-                <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-slate-700">
-                  +{block.people.length - 3}
-                </span>
-              )}
-            </div>
-
-            <p className="mt-4 text-xs font-semibold text-slate-500">
-              Intensidade
-            </p>
-
-            <div className="mt-2 flex items-center gap-1.5">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <span
-                  key={index}
-                  className={`h-2 w-2 rounded-full ${
-                    index < Math.ceil((block.intensity || 0) / 2)
-                      ? "bg-violet-700"
-                      : "bg-slate-200"
-                  }`}
-                />
-              ))}
-
-              <span className="ml-2 text-xs text-slate-500">
-                {block.intensity}/10
+              ))
+            ) : (
+              <span className="text-xs text-slate-400">
+                Nenhuma relação registrada
               </span>
-            </div>
-
-            <p className="mt-4 text-xs font-medium text-violet-700">
-              Abrir acontecimento
-            </p>
+            )}
           </div>
         </div>
-      </button>
+      </div>
+    </article>
+  )
+}
 
-      <div className="relative">
-        {connectedBlocks.length > 0 ? (
-          <>
-            <div className="absolute -left-4 top-1/2 hidden h-px w-4 border-t border-dashed border-violet-300 xl:block" />
+/**
+ * Espelho do paciente.
+ *
+ * Diferente da visão de sessões, o Espelho organiza acontecimentos pela data
+ * real em que ocorreram na vida do paciente. Isso ajuda a visualizar a linha
+ * da vida emocional, conexões e padrões que atravessam diferentes sessões.
+ */
+export function MirrorTimeline({ blocks = [], onOpenBlock }) {
+  const [activeFilter, setActiveFilter] = useState("all")
 
-            <div className="rounded-3xl border border-dashed border-violet-100 bg-white/60 p-3 xl:border-none xl:bg-transparent xl:p-0">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-700 xl:hidden">
-                Blocos conectados
-              </p>
+  const sortedBlocks = useMemo(() => {
+    return [...blocks].sort((firstBlock, secondBlock) => {
+      return (
+        getDateTimestamp(firstBlock.eventDate || firstBlock.date) -
+        getDateTimestamp(secondBlock.eventDate || secondBlock.date)
+      )
+    })
+  }, [blocks])
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                {connectedBlocks.map((connectedBlock) => (
-                  <MirrorConnectedCard
-                    key={connectedBlock.id}
-                    block={connectedBlock}
+  const filteredBlocks = useMemo(() => {
+    if (activeFilter === "connected") {
+      return sortedBlocks.filter((block) => (block.connections || []).length > 0)
+    }
+
+    if (activeFilter === "highIntensity") {
+      return sortedBlocks.filter((block) => Number(block.intensity || 0) >= 8)
+    }
+
+    return sortedBlocks
+  }, [activeFilter, sortedBlocks])
+
+  const summary = useMemo(() => {
+    return getMirrorSummary(sortedBlocks)
+  }, [sortedBlocks])
+
+  const groupedBlocks = useMemo(() => {
+    return groupBlocksByYear(filteredBlocks)
+  }, [filteredBlocks])
+
+  const years = Object.keys(groupedBlocks).sort((firstYear, secondYear) => {
+    if (firstYear === "Sem data") return 1
+    if (secondYear === "Sem data") return -1
+
+    return Number(firstYear) - Number(secondYear)
+  })
+
+  if (blocks.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center">
+        <h3 className="text-base font-black text-slate-950">
+          Espelho ainda vazio
+        </h3>
+
+        <p className="mx-auto mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+          Os acontecimentos aparecerão aqui quando houver blocos registrados na
+          timeline do paciente.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="grid gap-5">
+      <header className="rounded-3xl border border-violet-100 bg-violet-50/40 p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
+              Espelho do paciente
+            </p>
+
+            <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+              Linha da vida emocional
+            </h3>
+
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+              Acontecimentos organizados pela data real em que ocorreram na vida
+              do paciente, independentemente da sessão em que foram relatados.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <MirrorFilterButton
+              isActive={activeFilter === "all"}
+              onClick={() => setActiveFilter("all")}
+            >
+              Todos
+            </MirrorFilterButton>
+
+            <MirrorFilterButton
+              isActive={activeFilter === "connected"}
+              onClick={() => setActiveFilter("connected")}
+            >
+              Conectados
+            </MirrorFilterButton>
+
+            <MirrorFilterButton
+              isActive={activeFilter === "highIntensity"}
+              onClick={() => setActiveFilter("highIntensity")}
+            >
+              Alta intensidade
+            </MirrorFilterButton>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <SummaryItem label="Acontecimentos" value={summary.eventsCount} />
+          <SummaryItem label="Conexões" value={summary.connectionsCount} />
+          <SummaryItem label="Emoções" value={summary.emotionsCount} />
+          <SummaryItem label="Relações" value={summary.relationshipsCount} />
+          <SummaryItem label="Alta intensidade" value={summary.highIntensityCount} />
+        </div>
+      </header>
+
+      {filteredBlocks.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center">
+          <h3 className="text-base font-black text-slate-950">
+            Nenhum acontecimento encontrado
+          </h3>
+
+          <p className="mx-auto mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Ajuste o filtro para visualizar outros acontecimentos do espelho.
+          </p>
+        </section>
+      ) : (
+        <section className="grid gap-6">
+          {years.map((year) => (
+            <section key={year} className="grid gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-16 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+                  {year}
+                </span>
+
+                <div className="h-px flex-1 bg-slate-200" />
+
+                <span className="text-xs font-semibold text-slate-400">
+                  {groupedBlocks[year].length} acontecimento
+                  {groupedBlocks[year].length !== 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="grid gap-3 xl:grid-cols-2">
+                {groupedBlocks[year].map((block) => (
+                  <MirrorEventCard
+                    key={block.id}
+                    block={block}
                     onOpenBlock={onOpenBlock}
                   />
                 ))}
               </div>
-            </div>
-          </>
-        ) : (
-          <div className="hidden h-full items-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-400 xl:flex">
-            Sem desdobramentos conectados.
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export function MirrorTimeline({ blocks, onOpenBlock }) {
-  const [showOnlyConnected, setShowOnlyConnected] = useState(false)
-
-  const blocksById = getBlocksById(blocks)
-  const sortedBlocks = sortBlocksByEventDate(blocks)
-  const mainBlocks = getMirrorMainBlocks(sortedBlocks)
-
-  const visibleBlocks = showOnlyConnected
-    ? mainBlocks.filter((block) => (block.connections || []).length > 0)
-    : mainBlocks
-
-  const totalPeople = getUniquePeopleCount(blocks)
-  const totalConnections = getConnectionsCount(blocks)
-
-  const firstYear = sortedBlocks[0]
-    ? getYearFromEventDate(sortedBlocks[0].eventDate)
-    : "-"
-
-  const lastYear = sortedBlocks[sortedBlocks.length - 1]
-    ? getYearFromEventDate(sortedBlocks[sortedBlocks.length - 1].eventDate)
-    : "-"
-
-  return (
-    <div className="mt-6 sm:mt-8">
-      <div className="rounded-3xl border border-violet-100 bg-violet-50/70 p-4 sm:p-5">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-violet-700">
-              Espelho longitudinal
-            </p>
-
-            <h3 className="mt-1 text-xl font-bold text-violet-950 sm:text-2xl">
-              Linha da vida emocional
-            </h3>
-
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-violet-700">
-              Visualize os acontecimentos principais em todos os anos, com seus
-              desdobramentos e conexões emocionais ao lado.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowOnlyConnected(!showOnlyConnected)}
-            className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${
-              showOnlyConnected
-                ? "bg-violet-800 text-white"
-                : "bg-white text-violet-800 hover:bg-violet-100"
-            }`}
-          >
-            {showOnlyConnected
-              ? "Mostrar todos"
-              : "Mostrar apenas conectados"}
-          </button>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Eventos principais
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {mainBlocks.length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Pessoas envolvidas
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {totalPeople}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Conexões identificadas
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-900">
-              {totalConnections}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500">
-              Período coberto
-            </p>
-
-            <p className="mt-1 text-lg font-bold text-violet-800">
-              {firstYear} — {lastYear}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6">
-        <div className="relative border-l-2 border-violet-100 pl-6 sm:pl-8">
-          <div className="space-y-5">
-            {visibleBlocks.map((block) => {
-              const connectedBlocks = getMirrorConnectedBlocks(block, blocksById)
-
-              return (
-                <MirrorMainCard
-                  key={block.id}
-                  block={block}
-                  connectedBlocks={connectedBlocks}
-                  onOpenBlock={onOpenBlock}
-                />
-              )
-            })}
-          </div>
-        </div>
-
-        {visibleBlocks.length === 0 && (
-          <div className="flex min-h-[220px] items-center justify-center text-center">
-            <div>
-              <p className="text-lg font-semibold text-slate-800">
-                Nenhum acontecimento encontrado
-              </p>
-
-              <p className="mt-2 text-sm text-slate-500">
-                Os acontecimentos aparecerão aqui quando houver blocos
-                registrados.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+            </section>
+          ))}
+        </section>
+      )}
+    </section>
   )
 }
