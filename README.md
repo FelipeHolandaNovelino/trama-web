@@ -158,7 +158,7 @@ Relações disponíveis:
 └─ Chefe
 ```
 
-Os relacionamentos são salvos com a primeira letra maiúscula para manter o padrão visual.
+Os relacionamentos são salvos com a primeira letra maiúscula e não são duplicados.
 
 ---
 
@@ -199,9 +199,9 @@ A timeline permite:
 - excluir sessões;
 - visualizar sessões em calendário anual;
 - abrir sessão em modal;
-- visualizar blocos compactos dentro da sessão.
+- visualizar blocos padronizados dentro da sessão.
 
-O calendário de sessões foi compactado para ocupar menos espaço e permitir acesso mais rápido ao conteúdo clínico.
+O calendário de sessões foi compactado e revisado para funcionar melhor em telas menores.
 
 ---
 
@@ -391,6 +391,33 @@ Isso evita que a tela pareça quebrada quando um paciente ainda não possui hist
 
 ---
 
+## Responsividade
+
+A responsividade principal do prontuário foi revisada nos componentes mais importantes da timeline.
+
+Foram ajustados:
+
+```txt
+ClinicalBlockCard
+PatientHeader
+MirrorTimeline
+SessionsCalendar
+Timeline
+```
+
+Melhorias aplicadas:
+
+- cards clínicos mais seguros em mobile;
+- chips de emoções e relações com quebra controlada;
+- cabeçalho do paciente com melhor adaptação em telas menores;
+- botão **Nova sessão** em largura total no mobile;
+- filtros do Espelho reorganizados;
+- calendário de sessões em grid responsivo;
+- abas da timeline em grid 2x2 no mobile;
+- containers com espaçamentos menores em telas pequenas.
+
+---
+
 ## Dados demonstrativos
 
 O projeto possui um arquivo central de seeds:
@@ -432,12 +459,10 @@ src/
 │  ├─ PatientCard.jsx
 │  ├─ PatientHeader.jsx
 │  ├─ PatientsFilters.jsx
-│  ├─ PatientsStats.jsx
 │  ├─ SessionModal.jsx
 │  ├─ SessionsCalendar.jsx
 │  ├─ Sidebar.jsx
 │  ├─ Timeline.jsx
-│  ├─ TimelineBlock.jsx
 │  ├─ TimelineBlockModal.jsx
 │  └─ TimelineEmptyState.jsx
 │
@@ -627,8 +652,22 @@ O projeto já possui:
 - modo Espelho com filtro por ano, conectados e alta intensidade;
 - cards clínicos padronizados com `ClinicalBlockCard`;
 - modal de bloco refinado;
+- revisão responsiva dos principais componentes da timeline;
 - seed demonstrativo para Ana Luiza;
 - persistência local.
+
+---
+
+## Limpeza recente
+
+Após a padronização dos blocos com `ClinicalBlockCard`, componentes antigos sem uso foram removidos:
+
+```txt
+src/components/TimelineBlock.jsx
+src/components/PatientsStats.jsx
+```
+
+Essa limpeza reduz duplicação visual e mantém a estrutura do projeto mais simples.
 
 ---
 
@@ -636,12 +675,12 @@ O projeto já possui:
 
 ### Curto prazo
 
-- Revisar responsividade do Espelho em telas menores.
+- Revisar responsividade de modais em telas menores.
 - Melhorar fluxo de criação de relacionamentos dentro do paciente.
 - Melhorar edição do paciente dentro do prontuário.
-- Revisar `PatientsStats.jsx` e avaliar se ainda é necessário.
 - Revisar opções clínicas do modal de sessão.
 - Melhorar estados vazios dos modos Emoções, Relações e Espelho.
+- Revisar consistência visual da Home após as mudanças da timeline.
 
 ### Médio prazo
 
