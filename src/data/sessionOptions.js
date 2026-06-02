@@ -1,48 +1,39 @@
+/**
+ * Emoções disponíveis para seleção nos blocos clínicos.
+ *
+ * As relações não ficam mais neste arquivo, pois agora vêm dos
+ * relacionamentos cadastrados diretamente no perfil de cada paciente.
+ *
+ * As tags também não são mais exibidas no modal de sessão. Elas podem existir
+ * em dados antigos por compatibilidade, mas não fazem parte do fluxo atual.
+ */
 export const availableEmotions = [
-  "ansiedade",
-  "medo",
-  "culpa",
-  "raiva",
-  "tristeza",
-  "alívio",
-  "orgulho",
-  "pertencimento",
-  "exaustão",
-  "esperança",
-  "luto",
-  "confiança",
-  "frustração",
-  "admiração",
-  "ternura",
-  "coragem",
-  "segurança",
-  "ambivalência",
-  "calma",
-]
-
-export const availablePeople = [
-  "Mãe",
-  "Pai",
-  "Marido",
-  "Irmão",
-  "Chefe",
-  "Colega de trabalho",
-]
-
-export const availableTags = [
-  "trabalho",
-  "família",
-  "limites",
-  "cuidado",
-  "autonomia",
-  "sobrecarga",
-  "mudança",
-  "conquista",
-  "luto",
-  "vínculo",
-  "carreira",
-  "responsabilidade",
-  "reparação",
-  "exposição",
-  "perfeccionismo",
+  "Ansiedade",
+  "Medo",
+  "Culpa",
+  "Raiva",
+  "Tristeza",
+  "Alívio",
+  "Orgulho",
+  "Pertencimento",
+  "Exaustão",
+  "Esperança",
+  "Luto",
+  "Confiança",
+  "Frustração",
+  "Admiração",
+  "Ternura",
+  "Coragem",
+  "Segurança",
+  "Ambivalência",
+  "Calma",
+  "Vergonha",
+  "Solidão",
+  "Insegurança",
+  "Sobrecarga",
+  "Desamparo",
+  "Rejeição",
+  "Angústia",
+  "Gratidão",
+  "Autonomia",
 ]
