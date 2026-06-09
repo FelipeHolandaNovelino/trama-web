@@ -4,6 +4,7 @@
 
 O projeto foi desenvolvido como portfólio front-end, com foco em **React**, **componentização**, **responsividade**, **organização de estado**, **persistência local** e construção de uma interface útil para um problema real.
 
+🔗 **Deploy:** [Acessar o Trama na Vercel](https://trama-web-chi.vercel.app/)
 ---
 
 ## Preview
